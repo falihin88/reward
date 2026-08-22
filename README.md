@@ -45,6 +45,8 @@ The application stack includes 3 containers:
 
 Database state (`mariadb_data`), uploads (`uploads_data`), and application storage (`storage_data`) persist automatically across container restarts.
 
+> 📘 **Coolify Deployment Guide**: For step-by-step self-hosted PaaS deployment with Coolify and automated SSL, see [COOLIFY_DEPLOYMENT.md](COOLIFY_DEPLOYMENT.md).
+
 ---
 
 ## 💻 Manual Local Installation

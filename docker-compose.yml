@@ -10,44 +10,48 @@ services:
       - "8000:8000"
     environment:
       APP_NAME: "AMYN Madrasah"
-      APP_ENV: production
-      APP_KEY: "base64:7qZ0bY1V4mK9WpX3rL8sN2tU5vY6zA1bC2dE3fG4hI5="
-      APP_DEBUG: "false"
-      APP_URL: "http://localhost:8000"
+      APP_ENV: ${APP_ENV:-production}
+      APP_KEY: ${APP_KEY:-"base64:7qZ0bY1V4mK9WpX3rL8sN2tU5vY6zA1bC2dE3fG4hI5="}
+      APP_DEBUG: ${APP_DEBUG:-"false"}
+      APP_URL: ${APP_URL:-"http://localhost:8000"}
       DB_CONNECTION: mysql
       DB_HOST: mariadb
       DB_PORT: 3306
-      DB_DATABASE: amyn_madrasah
-      DB_USERNAME: amyn_user
-      DB_PASSWORD: amyn_secret_password
+      DB_DATABASE: ${DB_DATABASE:-amyn_madrasah}
+      DB_USERNAME: ${DB_USERNAME:-amyn_user}
+      DB_PASSWORD: ${DB_PASSWORD:-amyn_secret_password}
     volumes:
       - storage_data:/var/www/html/storage
       - uploads_data:/var/www/html/public/uploads
+    networks:
+      - backend-network
+      - frontend-network
     depends_on:
       mariadb:
         condition: service_healthy
 
-  # 2. MariaDB Database Server
+  # 2. MariaDB Secure Database Server (Internal Network Only - No Exposed Public Ports)
   mariadb:
     image: mariadb:11
     container_name: amyn_madrasah_db
     restart: unless-stopped
-    ports:
-      - "3306:3306"
+    command: --skip-name-resolve --character-set-server=utf8mb4 --collation-server=utf8mb4_unicode_ci
     environment:
-      MYSQL_ROOT_PASSWORD: root_secret_password
-      MYSQL_DATABASE: amyn_madrasah
-      MYSQL_USER: amyn_user
-      MYSQL_PASSWORD: amyn_secret_password
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:-root_secret_password}
+      MYSQL_DATABASE: ${DB_DATABASE:-amyn_madrasah}
+      MYSQL_USER: ${DB_USERNAME:-amyn_user}
+      MYSQL_PASSWORD: ${DB_PASSWORD:-amyn_secret_password}
     volumes:
       - mariadb_data:/var/lib/mysql
+    networks:
+      - backend-network
     healthcheck:
       test: ["CMD", "healthcheck.sh", "--connect", "--innodb_initialized"]
       interval: 5s
       timeout: 5s
       retries: 10
 
-  # 3. phpMyAdmin Database Management Interface
+  # 3. phpMyAdmin Database Management Interface (Isolated & Restricted)
   phpmyadmin:
     image: phpmyadmin/phpmyadmin:latest
     container_name: amyn_madrasah_phpmyadmin
@@ -57,9 +61,19 @@ services:
     environment:
       PMA_HOST: mariadb
       PMA_PORT: 3306
-      MYSQL_ROOT_PASSWORD: root_secret_password
+      PMA_ARBITRARY: 0
+      UPLOAD_LIMIT: 64M
+    networks:
+      - backend-network
+      - frontend-network
     depends_on:
-      - mariadb
+      mariadb:
+        condition: service_healthy
+
+networks:
+  backend-network:
+    internal: true
+  frontend-network:
 
 volumes:
   mariadb_data:
