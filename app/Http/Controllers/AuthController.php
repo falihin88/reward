@@ -1,0 +1,106 @@
+<?php
+
+namespace App\Http\Controllers;
+
+use App\Models\User;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
+
+class AuthController extends Controller
+{
+    public function showLogin()
+    {
+        if (Auth::check()) {
+            return $this->redirectBasedOnRole(Auth::user());
+        }
+
+        $demoUsers = User::select('id', 'name', 'email', 'role')->get();
+
+        return inertia('Auth/Login', [
+            'demoUsers' => $demoUsers,
+        ]);
+    }
+
+    public function login(Request $request)
+    {
+        $credentials = $request->validate([
+            'email' => ['required', 'email'],
+            'password' => ['required'],
+        ]);
+
+        if (Auth::attempt($credentials)) {
+            $request->session()->regenerate();
+            return $this->redirectBasedOnRole(Auth::user());
+        }
+
+        return back()->withErrors([
+            'email' => 'The provided credentials do not match our records.',
+        ]);
+    }
+
+    public function switchUser(User $user, Request $request)
+    {
+        // If switching user manually via quick switcher while impersonating, clear impersonator session
+        $request->session()->forget('impersonator_id');
+        Auth::login($user);
+        $request->session()->regenerate();
+
+        return $this->redirectBasedOnRole($user);
+    }
+
+    public function impersonate(User $user, Request $request)
+    {
+        $currentUser = Auth::user();
+        if (!$currentUser || (!$currentUser->isTeacher() && !$currentUser->isAdmin())) {
+            abort(403, 'Only teachers or administrators can log in as students.');
+        }
+
+        // Store original teacher ID if not already impersonating
+        if (!$request->session()->has('impersonator_id')) {
+            $request->session()->put('impersonator_id', $currentUser->id);
+        }
+
+        Auth::login($user);
+        $request->session()->regenerate();
+
+        return redirect()->route('student.dashboard')->with('success', "Now logged in as student: {$user->name}. You can help them view and unlock cards!");
+    }
+
+    public function stopImpersonating(Request $request)
+    {
+        if ($request->session()->has('impersonator_id')) {
+            $impersonatorId = $request->session()->get('impersonator_id');
+            $originalUser = User::find($impersonatorId);
+            $request->session()->forget('impersonator_id');
+
+            if ($originalUser) {
+                Auth::login($originalUser);
+                $request->session()->regenerate();
+                return $this->redirectBasedOnRole($originalUser)->with('success', 'Returned to your account.');
+            }
+        }
+
+        return redirect()->route('login');
+    }
+
+    public function logout(Request $request)
+    {
+        $request->session()->forget('impersonator_id');
+        Auth::logout();
+        $request->session()->invalidate();
+        $request->session()->regenerateToken();
+
+        return redirect()->route('login');
+    }
+
+    protected function redirectBasedOnRole(User $user)
+    {
+        if ($user->isAdmin()) {
+            return redirect()->route('admin.dashboard');
+        } elseif ($user->isTeacher()) {
+            return redirect()->route('teacher.dashboard');
+        } else {
+            return redirect()->route('student.dashboard');
+        }
+    }
+}

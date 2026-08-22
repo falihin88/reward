@@ -1,0 +1,104 @@
+@import "tailwindcss";
+
+@layer base {
+  body {
+    font-family: 'Plus Jakarta Sans', sans-serif;
+  }
+
+  .font-heading {
+    font-family: 'Cinzel', serif;
+  }
+}
+
+/* Theme Tokens & Utility Classes */
+:root {
+  --bg-main: #f8fafc;
+  --bg-header: rgba(255, 255, 255, 0.9);
+  --bg-card: rgba(255, 255, 255, 0.95);
+  --bg-card-sub: #f1f5f9;
+  --border-main: #e2e8f0;
+  --text-main: #0f172a;
+  --text-muted: #64748b;
+  --table-header-bg: #f1f5f9;
+  --table-hover: rgba(241, 245, 249, 0.8);
+}
+
+.dark {
+  --bg-main: #020617;
+  --bg-header: rgba(15, 23, 42, 0.85);
+  --bg-card: rgba(15, 23, 42, 0.9);
+  --bg-card-sub: #020617;
+  --border-main: #1e293b;
+  --text-main: #f8fafc;
+  --text-muted: #94a3b8;
+  --table-header-bg: #020617;
+  --table-hover: rgba(30, 41, 59, 0.4);
+}
+
+/* 3D Card Animation Utilities */
+.perspective-1000 {
+  perspective: 1000px;
+}
+
+.transform-style-3d {
+  transform-style: preserve-3d;
+}
+
+.backface-hidden {
+  backface-visibility: hidden;
+}
+
+.rotate-y-180 {
+  transform: rotateY(180deg);
+}
+
+/* Custom Rarity Glow Animations */
+@keyframes rarity-pulse {
+  0%, 100% {
+    box-shadow: 0 0 15px rgba(245, 158, 11, 0.4), inset 0 0 15px rgba(245, 158, 11, 0.2);
+  }
+  50% {
+    box-shadow: 0 0 30px rgba(245, 158, 11, 0.8), inset 0 0 25px rgba(245, 158, 11, 0.4);
+  }
+}
+
+.rarity-legendary-glow {
+  animation: rarity-pulse 3s infinite ease-in-out;
+  border-color: #f59e0b;
+}
+
+.rarity-epic-glow {
+  box-shadow: 0 0 20px rgba(168, 85, 247, 0.4);
+  border-color: #a855f7;
+}
+
+.rarity-rare-glow {
+  box-shadow: 0 0 15px rgba(59, 130, 246, 0.4);
+  border-color: #3b82f6;
+}
+
+.rarity-common-glow {
+  box-shadow: 0 0 10px rgba(148, 163, 184, 0.2);
+  border-color: #64748b;
+}
+
+/* Shimmer overlay for uncollected cards */
+.shimmer {
+  background: linear-gradient(
+    90deg,
+    rgba(255, 255, 255, 0) 0%,
+    rgba(255, 255, 255, 0.08) 50%,
+    rgba(255, 255, 255, 0) 100%
+  );
+  background-size: 200% 100%;
+  animation: shimmer-anim 2.5s infinite;
+}
+
+@keyframes shimmer-anim {
+  0% {
+    background-position: -200% 0;
+  }
+  100% {
+    background-position: 200% 0;
+  }
+}
