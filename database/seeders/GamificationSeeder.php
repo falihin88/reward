@@ -137,21 +137,21 @@ class GamificationSeeder extends Seeder
         }
 
         // 3. Admin Account
-        $admin = User::updateOrCreate(['email' => 'admin@hikmahway.com'], [
+        $admin = User::updateOrCreate(['email' => 'admin@amynmadrasah.com'], [
             'name' => 'Admin Director',
             'password' => Hash::make('password'),
             'role' => 'admin',
         ]);
 
         // 4. Teachers
-        $teacherAhmed = User::updateOrCreate(['email' => 'teacher.ahmed@hikmahway.com'], [
-            'name' => 'Teacher Ahmed',
+        $teacherAhmed = User::updateOrCreate(['email' => 'ahmad@amynmadrasah.com'], [
+            'name' => 'Ustaz Ahmad',
             'password' => Hash::make('password'),
             'role' => 'teacher',
         ]);
 
-        $teacherFatima = User::updateOrCreate(['email' => 'teacher.fatima@hikmahway.com'], [
-            'name' => 'Teacher Fatima',
+        $teacherFatima = User::updateOrCreate(['email' => 'teacher.fatima@amynmadrasah.com'], [
+            'name' => 'Ustazah Fatima',
             'password' => Hash::make('password'),
             'role' => 'teacher',
         ]);
@@ -159,8 +159,8 @@ class GamificationSeeder extends Seeder
         // 5. Students
         $studentsData = [
             [
-                'name' => 'Zayd Omar',
-                'email' => 'zayd@student.com',
+                'name' => 'Tariq ibn Ziyad',
+                'email' => 'tariq@amynmadrasah.com',
                 'teacher_id' => $teacherAhmed->id,
                 'points' => 220,
                 'total_points_earned' => 300,
@@ -168,8 +168,8 @@ class GamificationSeeder extends Seeder
                 'last_activity_date' => now()->toDateString(),
             ],
             [
-                'name' => 'Maryam Yusuf',
-                'email' => 'maryam@student.com',
+                'name' => 'Fatima al-Fihri',
+                'email' => 'fatima@amynmadrasah.com',
                 'teacher_id' => $teacherAhmed->id,
                 'points' => 150,
                 'total_points_earned' => 210,
@@ -177,8 +177,8 @@ class GamificationSeeder extends Seeder
                 'last_activity_date' => now()->toDateString(),
             ],
             [
-                'name' => 'Youssef Ali',
-                'email' => 'youssef@student.com',
+                'name' => 'Zayd Omar',
+                'email' => 'zayd@amynmadrasah.com',
                 'teacher_id' => $teacherAhmed->id,
                 'points' => 90,
                 'total_points_earned' => 120,
@@ -187,7 +187,7 @@ class GamificationSeeder extends Seeder
             ],
             [
                 'name' => 'Aisha Hassan',
-                'email' => 'aisha@student.com',
+                'email' => 'aisha@amynmadrasah.com',
                 'teacher_id' => $teacherFatima->id,
                 'points' => 310,
                 'total_points_earned' => 450,
