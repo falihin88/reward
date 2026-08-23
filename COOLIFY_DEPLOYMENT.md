@@ -78,6 +78,23 @@ MYSQL_ROOT_PASSWORD=YOUR_STRONG_ROOT_DATABASE_PASSWORD
 
 ---
 
+## 🛠️ Troubleshooting: "No Server Found" / 502 Bad Gateway in Coolify
+
+If Coolify displays a **"No server found"** or **"No healthy upstream server"** error during or after deployment:
+
+1. **Verify Service Domain Mapping**:
+   - In Coolify Dashboard -> go to your Resource -> click the **`app`** service tab.
+   - Ensure the **Domains** field is populated with your domain and port `8000`: `https://yourdomain.com` (or `http://your-ip:8000`).
+2. **Check Port Exposure & Proxy Settings**:
+   - We updated both `docker-compose.yml` files (at root `/` and `/classapp/`) with explicit `ports: ["8000:8000"]` and `expose: ["8000"]`.
+   - In Coolify -> under `app` service settings -> ensure **Port** is set to **`8000`**.
+3. **Container Name Conflicts**:
+   - Removed fixed `container_name` attributes so Coolify can perform zero-downtime rolling container deployments without naming collisions.
+4. **Base Directory**:
+   - Set **Base Directory** in Coolify resource settings to `/` (root) or `/classapp`. Both root `/docker-compose.yml` and `/classapp/docker-compose.yml` now contain the complete production multi-container setup.
+
+---
+
 ## 🔑 Default Accounts After Deployment
 
 Log in at `https://madrasah.yourdomain.com`:
