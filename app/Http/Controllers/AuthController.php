@@ -9,6 +9,15 @@ use Inertia\Inertia;
 
 class AuthController extends Controller
 {
+    public function home()
+    {
+        if (Auth::check()) {
+            return $this->redirectBasedOnRole(Auth::user());
+        }
+
+        return redirect()->route('login');
+    }
+
     public function showLogin()
     {
         if (Auth::check()) {

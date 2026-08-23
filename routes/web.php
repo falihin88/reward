@@ -18,15 +18,7 @@ Route::get('/login', [AuthController::class, 'showLogin'])->name('login');
 Route::post('/login', [AuthController::class, 'login'])->middleware('throttle:5,1');
 
 // Redirect root to dashboard based on role or login
-Route::get('/', function () {
-    if (auth()->check()) {
-        $role = auth()->user()->role;
-        if ($role === 'admin') return redirect()->route('admin.dashboard');
-        if ($role === 'teacher') return redirect()->route('teacher.dashboard');
-        return redirect()->route('student.dashboard');
-    }
-    return redirect()->route('login');
-});
+Route::get('/', [AuthController::class, 'home'])->name('home');
 
 // Authenticated Routes
 Route::middleware(['auth'])->group(function () {
