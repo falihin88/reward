@@ -6,8 +6,8 @@ services:
       dockerfile: Dockerfile
     container_name: amyn_madrasah_app
     restart: unless-stopped
-    ports:
-      - "8000:8000"
+    expose:
+      - "8000"
     environment:
       APP_NAME: "AMYN Madrasah"
       APP_ENV: ${APP_ENV:-production}
@@ -56,8 +56,8 @@ services:
     image: phpmyadmin/phpmyadmin:latest
     container_name: amyn_madrasah_phpmyadmin
     restart: unless-stopped
-    ports:
-      - "8080:80"
+    expose:
+      - "80"
     environment:
       PMA_HOST: mariadb
       PMA_PORT: 3306
