@@ -13,13 +13,9 @@ use App\Http\Controllers\Teacher\StudentDetailController as TeacherStudentDetail
 use App\Http\Middleware\EnsureUserRole;
 use Illuminate\Support\Facades\Route;
 
-// Auth Routes
+// Public Auth Routes (With Strict Rate-Limiting)
 Route::get('/login', [AuthController::class, 'showLogin'])->name('login');
-Route::post('/login', [AuthController::class, 'login']);
-Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
-Route::post('/switch-user/{user}', [AuthController::class, 'switchUser'])->name('switch-user');
-Route::post('/impersonate/stop', [AuthController::class, 'stopImpersonating'])->name('impersonate.stop');
-Route::post('/impersonate/{user}', [AuthController::class, 'impersonate'])->name('impersonate');
+Route::post('/login', [AuthController::class, 'login'])->middleware('throttle:5,1');
 
 // Redirect root to dashboard based on role or login
 Route::get('/', function () {
@@ -35,12 +31,18 @@ Route::get('/', function () {
 // Authenticated Routes
 Route::middleware(['auth'])->group(function () {
 
+    // Auth Actions (Logout, Switch User, Impersonate)
+    Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
+    Route::post('/switch-user/{user}', [AuthController::class, 'switchUser'])->name('switch-user');
+    Route::post('/impersonate/stop', [AuthController::class, 'stopImpersonating'])->name('impersonate.stop');
+    Route::post('/impersonate/{user}', [AuthController::class, 'impersonate'])->name('impersonate');
+
     // Student Routes
     Route::middleware([EnsureUserRole::class . ':student,admin,teacher'])->group(function () {
         Route::get('/dashboard', [StudentDashboardController::class, 'index'])->name('student.dashboard');
-        Route::post('/dashboard/streak', [StudentDashboardController::class, 'claimStreak'])->name('student.streak');
+        Route::post('/dashboard/streak', [StudentDashboardController::class, 'claimStreak'])->name('student.streak')->middleware('throttle:10,1');
         Route::get('/cards', [StudentCardController::class, 'index'])->name('student.cards');
-        Route::post('/cards/{card}/unlock', [StudentCardController::class, 'unlock'])->name('student.cards.unlock');
+        Route::post('/cards/{card}/unlock', [StudentCardController::class, 'unlock'])->name('student.cards.unlock')->middleware('throttle:20,1');
         Route::get('/profile', [StudentProfileController::class, 'show'])->name('student.profile');
     });
 
@@ -48,8 +50,8 @@ Route::middleware(['auth'])->group(function () {
     Route::middleware([EnsureUserRole::class . ':teacher,admin'])->group(function () {
         Route::get('/teacher', [TeacherDashboardController::class, 'index'])->name('teacher.dashboard');
         Route::get('/teacher/attendance', [TeacherAttendanceController::class, 'index'])->name('teacher.attendance.index');
-        Route::post('/teacher/attendance', [TeacherAttendanceController::class, 'store'])->name('teacher.attendance.store');
-        Route::post('/teacher/award', [TeacherDashboardController::class, 'awardPoints'])->name('teacher.award');
+        Route::post('/teacher/attendance', [TeacherAttendanceController::class, 'store'])->name('teacher.attendance.store')->middleware('throttle:30,1');
+        Route::post('/teacher/award', [TeacherDashboardController::class, 'awardPoints'])->name('teacher.award')->middleware('throttle:30,1');
         Route::post('/teacher/students', [TeacherDashboardController::class, 'storeStudent'])->name('teacher.students.store');
         Route::put('/teacher/students/{student}', [TeacherDashboardController::class, 'updateStudent'])->name('teacher.students.update');
         Route::delete('/teacher/students/{student}', [TeacherDashboardController::class, 'destroyStudent'])->name('teacher.students.destroy');

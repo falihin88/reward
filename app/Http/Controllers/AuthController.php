@@ -15,7 +15,10 @@ class AuthController extends Controller
             return $this->redirectBasedOnRole(Auth::user());
         }
 
-        $demoUsers = User::select('id', 'name', 'email', 'role')->get();
+        // Only include quick switcher accounts in local/development environment
+        $demoUsers = app()->environment('production') 
+            ? collect() 
+            : User::select('id', 'name', 'email', 'role')->get();
 
         return inertia('Auth/Login', [
             'demoUsers' => $demoUsers,
@@ -41,6 +44,15 @@ class AuthController extends Controller
 
     public function switchUser(User $user, Request $request)
     {
+        if (app()->environment('production')) {
+            abort(403, 'Quick user switching is disabled in production.');
+        }
+
+        $currentUser = Auth::user();
+        if (!$currentUser || (!$currentUser->isTeacher() && !$currentUser->isAdmin())) {
+            abort(403, 'Unauthorized user switch attempt.');
+        }
+
         // If switching user manually via quick switcher while impersonating, clear impersonator session
         $request->session()->forget('impersonator_id');
         Auth::login($user);
