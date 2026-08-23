@@ -38,10 +38,9 @@ cd classapp
 docker compose up -d --build
 ```
 
-The application stack includes 3 containers:
+The application stack includes 2 containers:
 - 📱 **AMYN Madrasah Web Application**: `http://localhost:8000`
-- 🗄️ **MariaDB Database Server**: Port `3306`
-- 🛠️ **phpMyAdmin Database Management**: `http://localhost:8080` (Login with user: `amyn_user`, pass: `amyn_secret_password` or root: `root_secret_password`)
+- 🛠️ **phpMyAdmin Database GUI**: `http://localhost:8080` (Connect to your external/self-managed MariaDB server)
 
 Database state (`mariadb_data`), uploads (`uploads_data`), and application storage (`storage_data`) persist automatically across container restarts.
 

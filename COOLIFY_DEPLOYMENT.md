@@ -6,10 +6,9 @@ This guide provides step-by-step instructions for deploying **AMYN Madrasah** us
 
 ## 🏗️ Architecture Summary
 
-Coolify will deploy 3 connected Docker services defined in `docker-compose.yml`:
+Coolify will deploy 2 connected Docker services defined in `docker-compose.yml`:
 1. `app`: AMYN Madrasah Laravel 11 / Vue 3 Application (Port `8000`).
-2. `mariadb`: MariaDB 11 Database Server (Port `3306`).
-3. `phpmyadmin`: Web Database GUI (Port `8080`).
+2. `phpmyadmin`: Web Database GUI (Port `8080`).
 
 ---
 

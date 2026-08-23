@@ -5,6 +5,8 @@ services:
       context: .
       dockerfile: Dockerfile
     restart: unless-stopped
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
     expose:
       - "8000"
     labels:
@@ -23,9 +25,9 @@ services:
       APP_KEY: ${APP_KEY:-}
       APP_DEBUG: ${APP_DEBUG:-"false"}
       APP_URL: ${APP_URL:-"http://localhost:8000"}
-      DB_CONNECTION: mysql
-      DB_HOST: mariadb
-      DB_PORT: 3306
+      DB_CONNECTION: ${DB_CONNECTION:-mysql}
+      DB_HOST: ${DB_HOST:-host.docker.internal}
+      DB_PORT: ${DB_PORT:-3306}
       DB_DATABASE: ${DB_DATABASE:-amyn_madrasah}
       DB_USERNAME: ${DB_USERNAME:-amyn_user}
       DB_PASSWORD: ${DB_PASSWORD}
@@ -41,35 +43,13 @@ services:
     networks:
       - backend-network
       - frontend-network
-    depends_on:
-      mariadb:
-        condition: service_healthy
 
-  # 2. MariaDB Database Server
-  mariadb:
-    image: mariadb:11
-    restart: unless-stopped
-    command: --skip-name-resolve --character-set-server=utf8mb4 --collation-server=utf8mb4_unicode_ci
-    environment:
-      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
-      MYSQL_DATABASE: ${DB_DATABASE:-amyn_madrasah}
-      MYSQL_USER: ${DB_USERNAME:-amyn_user}
-      MYSQL_PASSWORD: ${DB_PASSWORD}
-    volumes:
-      - mariadb_data:/var/lib/mysql
-    networks:
-      - backend-network
-    healthcheck:
-      test: ["CMD", "healthcheck.sh", "--connect", "--innodb_initialized"]
-      interval: 5s
-      timeout: 5s
-      retries: 10
-      start_period: 15s
-
-  # 3. phpMyAdmin Database GUI
+  # 2. phpMyAdmin Database GUI
   phpmyadmin:
     image: phpmyadmin/phpmyadmin:latest
     restart: unless-stopped
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
     expose:
       - "80"
     labels:
@@ -77,25 +57,18 @@ services:
       - "traefik.enable=true"
       - "traefik.http.services.phpmyadmin.loadbalancer.server.port=80"
     environment:
-      PMA_HOST: mariadb
-      PMA_PORT: 3306
-      PMA_ARBITRARY: 0
+      PMA_HOST: ${DB_HOST:-host.docker.internal}
+      PMA_PORT: ${DB_PORT:-3306}
+      PMA_ARBITRARY: 1
       UPLOAD_LIMIT: 64M
     networks:
       - backend-network
       - frontend-network
-    depends_on:
-      mariadb:
-        condition: service_healthy
 
 networks:
   backend-network:
-    internal: true
   frontend-network:
 
 volumes:
-  mariadb_data:
   storage_data:
   uploads_data:
-
-
