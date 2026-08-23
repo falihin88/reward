@@ -37,18 +37,12 @@ COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
 
 WORKDIR /var/www/html
 
-# Copy composer definition files first for Docker layer caching
-COPY composer.json composer.lock ./
-
-# Install PHP dependencies without running scripts (prevents package:discover failure when env/DB is absent)
-RUN composer install --no-interaction --prefer-dist --optimize-autoloader --no-dev --ignore-platform-reqs --no-scripts
-
 # Copy application files and built assets from node_builder
 COPY . .
 COPY --from=node_builder /app/public/build ./public/build
 
-# Re-run dump-autoload for full classmaps
-RUN composer dump-autoload --optimize --no-dev
+# Install PHP dependencies without running scripts (prevents package:discover failure when env/DB is absent)
+RUN composer install --no-interaction --prefer-dist --optimize-autoloader --no-dev --ignore-platform-reqs --no-scripts
 
 # Permissions
 RUN chown -R www-data:www-data storage bootstrap/cache \
@@ -62,4 +56,5 @@ RUN sed -i 's/\r$//' /usr/local/bin/docker-entrypoint.sh \
 EXPOSE 8000
 
 ENTRYPOINT ["docker-entrypoint.sh"]
+
 
