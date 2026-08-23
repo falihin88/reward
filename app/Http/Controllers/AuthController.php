@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Inertia\Inertia;
 
 class AuthController extends Controller
 {
@@ -63,7 +64,7 @@ class AuthController extends Controller
         Auth::login($user);
         $request->session()->regenerate();
 
-        return redirect()->route('student.dashboard')->with('success', "Now logged in as student: {$user->name}. You can help them view and unlock cards!");
+        return Inertia::location(route('student.dashboard'));
     }
 
     public function stopImpersonating(Request $request)
@@ -76,11 +77,11 @@ class AuthController extends Controller
             if ($originalUser) {
                 Auth::login($originalUser);
                 $request->session()->regenerate();
-                return $this->redirectBasedOnRole($originalUser)->with('success', 'Returned to your account.');
+                return $this->redirectBasedOnRole($originalUser);
             }
         }
 
-        return redirect()->route('login');
+        return Inertia::location(route('login'));
     }
 
     public function logout(Request $request)
@@ -90,17 +91,19 @@ class AuthController extends Controller
         $request->session()->invalidate();
         $request->session()->regenerateToken();
 
-        return redirect()->route('login');
+        return Inertia::location(route('login'));
     }
 
     protected function redirectBasedOnRole(User $user)
     {
+        $targetUrl = route('student.dashboard');
         if ($user->isAdmin()) {
-            return redirect()->route('admin.dashboard');
+            $targetUrl = route('admin.dashboard');
         } elseif ($user->isTeacher()) {
-            return redirect()->route('teacher.dashboard');
-        } else {
-            return redirect()->route('student.dashboard');
+            $targetUrl = route('teacher.dashboard');
         }
+
+        return Inertia::location($targetUrl);
     }
 }
+
