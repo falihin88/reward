@@ -56,10 +56,19 @@ Route::middleware(['auth'])->group(function () {
         Route::get('/teacher/students/{student}', [TeacherStudentDetailController::class, 'show'])->name('teacher.students.show');
     });
 
+    // Tenant Switcher Route (Admin & Teacher)
+    Route::post('/tenants/{tenant}/switch', [\App\Http\Controllers\SuperAdmin\TenantController::class, 'switch'])->name('tenants.switch');
+
     // Admin Routes
     Route::middleware([EnsureUserRole::class . ':admin'])->group(function () {
         Route::get('/admin', [AdminDashboardController::class, 'index'])->name('admin.dashboard');
         
+        // Tenant Management
+        Route::get('/admin/tenants', [\App\Http\Controllers\SuperAdmin\TenantController::class, 'index'])->name('admin.tenants.index');
+        Route::post('/admin/tenants', [\App\Http\Controllers\SuperAdmin\TenantController::class, 'store'])->name('admin.tenants.store');
+        Route::put('/admin/tenants/{tenant}', [\App\Http\Controllers\SuperAdmin\TenantController::class, 'update'])->name('admin.tenants.update');
+        Route::delete('/admin/tenants/{tenant}', [\App\Http\Controllers\SuperAdmin\TenantController::class, 'destroy'])->name('admin.tenants.destroy');
+
         // Users Management
         Route::get('/admin/users', [AdminUserController::class, 'index'])->name('admin.users.index');
         Route::post('/admin/users', [AdminUserController::class, 'store'])->name('admin.users.store');

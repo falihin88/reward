@@ -34,13 +34,28 @@ class HandleInertiaRequests extends Middleware
         $impersonatorId = $request->session()->get('impersonator_id');
         $impersonator = $impersonatorId ? User::find($impersonatorId) : null;
 
+        $tenant = app()->bound('tenant') ? app('tenant') : null;
+        $availableTenants = ($user && in_array($user->role, ['admin', 'teacher']))
+            ? \App\Models\Tenant::where('is_active', true)->get(['id', 'name', 'slug', 'code', 'accent_color', 'logo_url'])
+            : [];
+
         return array_merge(parent::share($request), [
+            'tenant' => $tenant ? [
+                'id' => $tenant->id,
+                'name' => $tenant->name,
+                'slug' => $tenant->slug,
+                'code' => $tenant->code,
+                'logo_url' => $tenant->logo_url,
+                'accent_color' => $tenant->accent_color,
+            ] : null,
+            'availableTenants' => $availableTenants,
             'auth' => [
                 'user' => $user ? [
                     'id' => $user->id,
                     'name' => $user->name,
                     'email' => $user->email,
                     'role' => $user->role,
+                    'tenant_id' => $user->tenant_id,
                     'points' => $user->points,
                     'total_points_earned' => $user->total_points_earned,
                     'current_streak' => $user->current_streak,

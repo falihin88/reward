@@ -2,22 +2,22 @@
 
 namespace App\Models;
 
+use App\Traits\BelongsToTenant;
 use Illuminate\Database\Eloquent\Model;
 
 class Setting extends Model
 {
-    protected $primaryKey = 'key';
-    public $incrementing = false;
-    protected $keyType = 'string';
+    use BelongsToTenant;
 
     protected $fillable = [
+        'tenant_id',
         'key',
         'value',
     ];
 
     public static function getValue(string $key, $default = null)
     {
-        $setting = static::find($key);
+        $setting = static::where('key', $key)->first();
         return $setting ? $setting->value : $default;
     }
 
