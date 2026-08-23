@@ -184,9 +184,9 @@
               required
               class="w-full bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl py-2 px-3 text-slate-900 dark:text-slate-100 text-xs focus:outline-none focus:border-amber-500"
             >
-              <option value="student">Student</option>
-              <option value="teacher">Teacher</option>
-              <option value="admin">Admin</option>
+              <option value="student" class="bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100">Student</option>
+              <option value="teacher" class="bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100">Teacher</option>
+              <option value="admin" class="bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100">Admin</option>
             </select>
           </div>
 
@@ -196,8 +196,8 @@
               v-model="form.teacher_id"
               class="w-full bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl py-2 px-3 text-slate-900 dark:text-slate-100 text-xs focus:outline-none focus:border-amber-500"
             >
-              <option :value="null">-- Select Teacher --</option>
-              <option v-for="t in teachers" :key="t.id" :value="t.id">{{ t.name }}</option>
+              <option :value="null" class="bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100">-- Select Teacher --</option>
+              <option v-for="t in teachers" :key="t.id" :value="t.id" class="bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100">{{ t.name }}</option>
             </select>
           </div>
 

@@ -30,8 +30,18 @@ if [ -z "$APP_KEY" ]; then
 fi
 
 # Run Database Migrations and Seeders
-echo "Running Database Migrations and Seeders..."
-php artisan migrate:fresh --force --seed
+echo "Checking Environment ($APP_ENV) for Database Migrations..."
+if [ "$APP_ENV" = "local" ] || [ "$APP_ENV" = "development" ] || [ "$APP_ENV" = "dev" ] || [ "$DB_FRESH_ON_DEPLOY" = "true" ]; then
+    echo "Development environment detected. Running migrate:fresh with seeders..."
+    php artisan migrate:fresh --force --seed
+else
+    echo "Production environment detected. Running safe database migrations (migrate --force)..."
+    php artisan migrate --force
+    if [ "$SEED_ON_DEPLOY" = "true" ]; then
+        echo "SEED_ON_DEPLOY is enabled. Seeding database..."
+        php artisan db:seed --force
+    fi
+fi
 
 # Start Laravel server
 echo "Starting Laravel server on port 8000..."

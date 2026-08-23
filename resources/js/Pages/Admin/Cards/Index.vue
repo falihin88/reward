@@ -136,10 +136,10 @@
             <div>
               <label class="block font-semibold text-slate-700 dark:text-slate-300 mb-1">Rarity Tier</label>
               <select v-model="form.rarity" required class="w-full bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl p-2.5 text-slate-900 dark:text-slate-100 focus:border-amber-500">
-                <option value="common">Common</option>
-                <option value="rare">Rare</option>
-                <option value="epic">Epic</option>
-                <option value="legendary">Legendary</option>
+                <option value="common" class="bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100">Common</option>
+                <option value="rare" class="bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100">Rare</option>
+                <option value="epic" class="bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100">Epic</option>
+                <option value="legendary" class="bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100">Legendary</option>
               </select>
             </div>
             <div>

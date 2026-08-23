@@ -69,7 +69,12 @@ MYSQL_ROOT_PASSWORD=YOUR_STRONG_ROOT_DATABASE_PASSWORD
 ### Step 4: Deploy
 
 1. Click **Deploy** in Coolify.
-2. Coolify will build the Docker container image, wait for MariaDB healthcheck to pass, run database migrations and seeders automatically, and launch the site.
+2. Coolify will build the Docker container image, wait for MariaDB healthcheck to pass, run safe database migrations (`php artisan migrate --force`), and launch the site.
+
+> 🗄️ **Production Database Safety**:
+> - When `APP_ENV=production`, deployments **preserve all existing data** and only execute pending migrations. It will **NEVER** wipe or re-seed the database automatically.
+> - To force a initial seed without wiping data on initial setup, set `SEED_ON_DEPLOY=true` in environment variables.
+> - For development (`APP_ENV=local` or `development`), `docker-entrypoint.sh` runs `migrate:fresh --seed` automatically.
 
 ---
 
