@@ -28,7 +28,7 @@ services:
       DB_PORT: 3306
       DB_DATABASE: ${DB_DATABASE:-amyn_madrasah}
       DB_USERNAME: ${DB_USERNAME:-amyn_user}
-      DB_PASSWORD: ${DB_PASSWORD:-amyn_secret_password}
+      DB_PASSWORD: ${DB_PASSWORD}
       PHP_CLI_SERVER_WORKERS: ${PHP_CLI_SERVER_WORKERS:-4}
       SESSION_DRIVER: ${SESSION_DRIVER:-database}
       CACHE_STORE: ${CACHE_STORE:-database}
@@ -51,10 +51,10 @@ services:
     restart: unless-stopped
     command: --skip-name-resolve --character-set-server=utf8mb4 --collation-server=utf8mb4_unicode_ci
     environment:
-      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:-root_secret_password}
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
       MYSQL_DATABASE: ${DB_DATABASE:-amyn_madrasah}
       MYSQL_USER: ${DB_USERNAME:-amyn_user}
-      MYSQL_PASSWORD: ${DB_PASSWORD:-amyn_secret_password}
+      MYSQL_PASSWORD: ${DB_PASSWORD}
     volumes:
       - mariadb_data:/var/lib/mysql
     networks:
