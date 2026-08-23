@@ -83,18 +83,18 @@ MYSQL_ROOT_PASSWORD=YOUR_STRONG_ROOT_DATABASE_PASSWORD
 
 ## 🛠️ Troubleshooting: "No Server Found" / 502 Bad Gateway in Coolify
 
-If Coolify displays a **"No server found"** or **"No healthy upstream server"** error during or after deployment:
+If Coolify displays a **"No server found"** or **"No healthy upstream server"** error after a **successful** deployment, the container is not reachable/healthy for the proxy (Traefik skips unhealthy containers, which produces exactly this error):
 
-1. **Verify Service Domain Mapping**:
-   - In Coolify Dashboard -> go to your Resource -> click the **`app`** service tab.
-   - Ensure the **Domains** field is populated with your domain and port `8000`: `https://yourdomain.com` (or `http://your-ip:8000`).
-2. **Check Port Exposure & Proxy Settings**:
-   - We updated both `docker-compose.yml` files (at root `/` and `/classapp/`) with explicit `ports: ["8000:8000"]` and `expose: ["8000"]`.
-   - In Coolify -> under `app` service settings -> ensure **Port** is set to **`8000`**.
-3. **Container Name Conflicts**:
-   - Removed fixed `container_name` attributes so Coolify can perform zero-downtime rolling container deployments without naming collisions.
+1. **Resource type must be "Docker Compose"**:
+   - The resource MUST be added as **Docker Compose** (not a single "Dockerfile" application). A single-application deploy has no `mariadb` service, so `DB_HOST=mariadb` never resolves and the container never becomes healthy.
+2. **Traefik backend port comes from the domain, not the compose file**:
+   - Coolify ignores `ports:`/`expose:` in your compose file when generating proxy routes. The container port **must** be embedded in the service's **Domains** field: `https://madrasah.yourdomain.com:8000`. The `:8000` only sets the backend port; visitors still use standard HTTPS on port 443.
+3. **Give first deploy time to become healthy**:
+   - The `app` service healthcheck now uses `start_period: 120s` with generous retries. On a fresh deploy MariaDB must initialize (first boot) before migrations can run. Do not expect the domain to respond for the first few minutes.
 4. **Base Directory**:
-   - Set **Base Directory** in Coolify resource settings to `/` (root) or `/classapp`. Both root `/docker-compose.yml` and `/classapp/docker-compose.yml` now contain the complete production multi-container setup.
+   - Set **Base Directory** in Coolify resource settings to `/` (root). The repository root contains `docker-compose.yml`, `Dockerfile`, and `docker-entrypoint.sh`.
+5. **Check container health & logs**:
+   - In Coolify, open the `app` service logs. If you see `WARNING: Still cannot reach mariadb:3306`, the DB hostname is not resolvable (see #1). If migrations fail, fix the DB credentials in the Environment Variables before redeploying.
 
 ---
 

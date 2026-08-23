@@ -4,7 +4,14 @@ set -e
 # If using MySQL/MariaDB, wait for database host to be ready
 if [ "$DB_CONNECTION" = "mysql" ] || [ "$DB_CONNECTION" = "mariadb" ]; then
     echo "Waiting for MariaDB database host ($DB_HOST:$DB_PORT) to be ready..."
-    until nc -z -v -w 2 "$DB_HOST" "$DB_PORT" 2>/dev/null; do
+    DB_WAIT_ATTEMPTS=0
+    until nc -z -w 2 "$DB_HOST" "$DB_PORT" 2>/dev/null; do
+        DB_WAIT_ATTEMPTS=$((DB_WAIT_ATTEMPTS + 1))
+        if [ $((DB_WAIT_ATTEMPTS % 15)) -eq 0 ]; then
+            echo "WARNING: Still cannot reach $DB_HOST:$DB_PORT after $((DB_WAIT_ATTEMPTS * 2))s."
+            echo "WARNING: Ensure this resource is deployed as 'Docker Compose' in Coolify (not as a single application),"
+            echo "WARNING: and that DB_HOST is set to the compose service name 'mariadb'."
+        fi
         echo "MariaDB is unavailable - sleeping 2 seconds..."
         sleep 2
     done
