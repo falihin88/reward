@@ -5,8 +5,6 @@ services:
       context: .
       dockerfile: Dockerfile
     restart: unless-stopped
-    ports:
-      - "${APP_PORT:-8000}:8000"
     expose:
       - "8000"
     labels:
@@ -65,8 +63,6 @@ services:
   phpmyadmin:
     image: phpmyadmin/phpmyadmin:latest
     restart: unless-stopped
-    ports:
-      - "${PMA_PORT:-8080}:80"
     expose:
       - "80"
     labels:
@@ -93,4 +89,5 @@ volumes:
   mariadb_data:
   storage_data:
   uploads_data:
+
 
