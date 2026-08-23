@@ -19,6 +19,10 @@ fi
 # Ensure storage directory permissions
 chmod -R 775 storage bootstrap/cache || true
 
+# Package Discovery
+echo "Running Package Discovery..."
+php artisan package:discover --ansi || true
+
 # Generate key if not set
 if [ -z "$APP_KEY" ]; then
     echo "Generating Application Key..."
