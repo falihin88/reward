@@ -35,6 +35,16 @@ php artisan storage:link --force || true
 echo "Running Package Discovery..."
 php artisan package:discover --ansi || true
 
+# Initialize .env file if missing (since .env is omitted by .dockerignore)
+if [ ! -f .env ]; then
+    echo "Initializing .env file..."
+    if [ -f .env.example ]; then
+        cp .env.example .env
+    else
+        touch .env
+    fi
+fi
+
 # Generate key if not set
 if [ -z "$APP_KEY" ]; then
     echo "Generating Application Key..."
