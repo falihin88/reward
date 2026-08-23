@@ -6,9 +6,10 @@ This guide provides step-by-step instructions for deploying **AMYN Madrasah** us
 
 ## 🏗️ Architecture Summary
 
-Coolify will deploy 2 connected Docker services defined in `docker-compose.yml`:
-1. `app`: AMYN Madrasah Laravel 11 / Vue 3 Application (Port `8000`).
-2. `phpmyadmin`: Web Database GUI (Port `8080`).
+Coolify deploys a **single** `app` service from `docker-compose.yml`:
+- `app`: AMYN Madrasah Laravel / Vue 3 Application (Port `8000`).
+
+The app connects to a **separate, standalone Coolify MariaDB instance** (created via **+ Add Resource -> MariaDB**), not to a bundled database service.
 
 ---
 
@@ -29,17 +30,16 @@ Coolify will deploy 2 connected Docker services defined in `docker-compose.yml`:
 In the Coolify Configuration Panel for your resource:
 
 1. **Main Web App Domain**:
-   - Set `Domains` for the `app` service to your custom domain: `https://madrasah.yourdomain.com` (pointing to port `8000`).
-2. **phpMyAdmin Domain (Optional)**:
-   - Set `Domains` for `phpmyadmin` service to: `https://pma.yourdomain.com` (pointing to port `8080`).
+   - Set `Domains` for the `app` service to your custom domain **including the port**: `https://madrasah.yourdomain.com:8000`.
+   - The `:8000` only tells the proxy which container port to forward to (Coolify ignores `expose:`/`ports:` in the compose file). Visitors still use normal HTTPS on port 443.
 
-Coolify will automatically issue Let's Encrypt SSL certificates for both domains!
+Coolify will automatically issue a Let's Encrypt SSL certificate for the domain.
 
 ---
 
 ### Step 3: Environment Variables
 
-Verify or set the following environment variables in Coolify:
+Verify or set the following environment variables in Coolify (App resource -> Environment Variables):
 
 ```env
 APP_NAME="AMYN Madrasah"
@@ -49,29 +49,34 @@ APP_DEBUG=false
 APP_URL=https://madrasah.yourdomain.com
 
 DB_CONNECTION=mysql
-DB_HOST=mariadb
+DB_HOST=PASTE_YOUR_MARIADB_INSTANCE_UUID_HERE
 DB_PORT=3306
 DB_DATABASE=amyn_madrasah
 DB_USERNAME=amyn_user
 DB_PASSWORD=YOUR_STRONG_CUSTOM_DATABASE_PASSWORD
-MYSQL_ROOT_PASSWORD=YOUR_STRONG_ROOT_DATABASE_PASSWORD
 ```
+
+> 🔑 **How to find `DB_HOST`**: Open your standalone MariaDB resource in Coolify, then click **Connect** (or look for the **Internal connection string**). The host is a UUID like `rolq9rulhuh46kmuxx8mjrfk` — copy that value into `DB_HOST`. It is **not** `mariadb`, `localhost`, or an IP.
+
+> 🔌 **Networking**: The app and the MariaDB instance must share a Docker network.
+> 1. In the **MariaDB resource** settings, ensure it is connected to the `coolify` network (this is the default for standalone Coolify databases).
+> 2. The `docker-compose.yml` already attaches the `app` service to the `coolify` network (`external: true`).
+>
+> If `DB_HOST` is a UUID and you still can't connect, both resources are likely on different networks.
 
 > 💡 **Build-Time vs Runtime Variables Tip**:
 > In Coolify settings, set `APP_ENV`, `APP_KEY`, and database credentials to **Runtime Only** (uncheck "Build Time"). This prevents `APP_ENV=production` from suppressing devDependencies during container image build. Our Dockerfile also enforces `ENV NODE_ENV=development` in the asset building stage to guarantee Vite and Tailwind compile properly during build.
 
-> 🛡️ **Database Security Hardening Implemented**:
-> 1. **Isolated Container Network**: MariaDB is placed on an `internal: true` backend network with **no exposed public host ports** (`port 3306` is not open to public port scans).
-> 2. **Restricted phpMyAdmin**: `PMA_ARBITRARY=0` is set to block attempts to connect to external servers.
-> 3. **DNS Spoofing Prevention**: MariaDB `--skip-name-resolve` flag enabled for faster and safer authentication.
-> 4. **Session Encryption**: Enforce encrypted session cookies (`SESSION_ENCRYPT=true`).
+> 🛡️ **Security**:
+> - The app enforces encrypted session cookies (`SESSION_ENCRYPT=true`).
+> - MariaDB is not bundled into the app compose; it runs as its own Coolify resource.
 
 ---
 
 ### Step 4: Deploy
 
 1. Click **Deploy** in Coolify.
-2. Coolify will build the Docker container image, wait for MariaDB healthcheck to pass, run safe database migrations (`php artisan migrate --force`), and launch the site.
+2. Coolify will build the Docker image, the entrypoint waits for the database host to be reachable, runs safe migrations (`php artisan migrate --force`), and launches the site.
 
 > 🗄️ **Production Database Safety**:
 > - When `APP_ENV=production`, deployments **preserve all existing data** and only execute pending migrations. It will **NEVER** wipe or re-seed the database automatically.

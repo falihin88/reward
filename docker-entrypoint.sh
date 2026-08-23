@@ -3,15 +3,22 @@ set -e
 
 # If using MySQL/MariaDB, wait for database host to be ready
 if [ "$DB_CONNECTION" = "mysql" ] || [ "$DB_CONNECTION" = "mariadb" ]; then
+    if [ -z "$DB_HOST" ]; then
+        echo "ERROR: DB_HOST is empty. Cannot connect to the database."
+        echo "ERROR: Set DB_HOST to your standalone Coolify MariaDB instance's internal host."
+        echo "ERROR:   -> Open the MariaDB resource in Coolify and copy the host from the 'Internal connection string'."
+        echo "ERROR:   -> It looks like a UUID (e.g. rolq9rulhuh46kmuxx8mjrfk), NOT 'mariadb' or 'localhost'."
+        echo "ERROR: Also set DB_PORT, DB_DATABASE, DB_USERNAME, DB_PASSWORD in the Coolify Environment Variables."
+        exit 1
+    fi
     echo "Waiting for MariaDB database host ($DB_HOST:$DB_PORT) to be ready..."
     DB_WAIT_ATTEMPTS=0
     until nc -z -w 2 "$DB_HOST" "$DB_PORT" 2>/dev/null; do
         DB_WAIT_ATTEMPTS=$((DB_WAIT_ATTEMPTS + 1))
         if [ $((DB_WAIT_ATTEMPTS % 15)) -eq 0 ]; then
             echo "WARNING: Still cannot reach $DB_HOST:$DB_PORT after $((DB_WAIT_ATTEMPTS * 2))s."
-            echo "WARNING: Check that DB_HOST ('$DB_HOST') and DB_PORT ('$DB_PORT') are correct."
-            echo "WARNING: 1. If MariaDB is running on the host OS, set DB_HOST=host.docker.internal."
-            echo "WARNING: 2. If MariaDB is another Coolify resource, connect both resources to the 'coolify' network or use host.docker.internal."
+            echo "WARNING: If DB_HOST is a UUID, both this app and the MariaDB resource must be on the same Docker network ('coolify')."
+            echo "WARNING: If MariaDB is on the host OS, set DB_HOST=host.docker.internal instead."
         fi
         echo "MariaDB is unavailable - sleeping 2 seconds..."
         sleep 2

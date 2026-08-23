@@ -1,5 +1,5 @@
 services:
-  # 1. AMYN Madrasah Web Application
+  # AMYN Madrasah Web Application (connects to a standalone Coolify MariaDB instance)
   app:
     build:
       context: .
@@ -21,7 +21,7 @@ services:
       interval: 15s
       timeout: 10s
       retries: 10
-      start_period: 120s
+      start_period: 60s
     environment:
       APP_NAME: "${APP_NAME:-AMYN Madrasah}"
       APP_ENV: ${APP_ENV:-production}
@@ -29,11 +29,11 @@ services:
       APP_DEBUG: ${APP_DEBUG:-"false"}
       APP_URL: ${APP_URL:-"http://localhost:8000"}
       DB_CONNECTION: ${DB_CONNECTION:-mysql}
-      DB_HOST: ${DB_HOST:-host.docker.internal}
+      DB_HOST: ${DB_HOST:-}
       DB_PORT: ${DB_PORT:-3306}
       DB_DATABASE: ${DB_DATABASE:-amyn_madrasah}
-      DB_USERNAME: ${DB_USERNAME:-amyn_user}
-      DB_PASSWORD: ${DB_PASSWORD}
+      DB_USERNAME: ${DB_USERNAME:-}
+      DB_PASSWORD: ${DB_PASSWORD:-}
       PHP_CLI_SERVER_WORKERS: ${PHP_CLI_SERVER_WORKERS:-4}
       SESSION_DRIVER: ${SESSION_DRIVER:-database}
       CACHE_STORE: ${CACHE_STORE:-database}
@@ -44,35 +44,9 @@ services:
       - storage_data:/var/www/html/storage
       - uploads_data:/var/www/html/public/uploads
     networks:
-      - backend-network
-      - frontend-network
-      - coolify
-
-  # 2. phpMyAdmin Database GUI
-  phpmyadmin:
-    image: phpmyadmin/phpmyadmin:latest
-    restart: unless-stopped
-    extra_hosts:
-      - "host.docker.internal:host-gateway"
-    expose:
-      - "80"
-    labels:
-      - "coolify.managed=true"
-      - "traefik.enable=true"
-      - "traefik.http.services.phpmyadmin.loadbalancer.server.port=80"
-    environment:
-      PMA_HOST: ${DB_HOST:-host.docker.internal}
-      PMA_PORT: ${DB_PORT:-3306}
-      PMA_ARBITRARY: 1
-      UPLOAD_LIMIT: 64M
-    networks:
-      - backend-network
-      - frontend-network
       - coolify
 
 networks:
-  backend-network:
-  frontend-network:
   coolify:
     name: coolify
     external: true
