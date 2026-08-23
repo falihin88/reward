@@ -58,6 +58,9 @@ DB_PASSWORD=YOUR_STRONG_CUSTOM_DATABASE_PASSWORD
 MYSQL_ROOT_PASSWORD=YOUR_STRONG_ROOT_DATABASE_PASSWORD
 ```
 
+> 💡 **Build-Time vs Runtime Variables Tip**:
+> In Coolify settings, set `APP_ENV`, `APP_KEY`, and database credentials to **Runtime Only** (uncheck "Build Time"). This prevents `APP_ENV=production` from suppressing devDependencies during container image build. Our Dockerfile also enforces `ENV NODE_ENV=development` in the asset building stage to guarantee Vite and Tailwind compile properly during build.
+
 > 🛡️ **Database Security Hardening Implemented**:
 > 1. **Isolated Container Network**: MariaDB is placed on an `internal: true` backend network with **no exposed public host ports** (`port 3306` is not open to public port scans).
 > 2. **Restricted phpMyAdmin**: `PMA_ARBITRARY=0` is set to block attempts to connect to external servers.

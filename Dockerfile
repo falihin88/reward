@@ -1,6 +1,7 @@
 # Stage 1: Build Frontend Assets
 FROM node:20-alpine AS node_builder
 WORKDIR /app
+ENV NODE_ENV=development
 COPY package.json package-lock.json ./
 RUN npm ci
 COPY . .
