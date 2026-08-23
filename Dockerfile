@@ -10,7 +10,8 @@ RUN npm run build
 FROM php:8.4-cli-alpine
 
 # Set Environment Variables
-ENV COMPOSER_ALLOW_SUPERUSER=1
+ENV COMPOSER_ALLOW_SUPERUSER=1 \
+    PHP_CLI_SERVER_WORKERS=4
 
 # Install system dependencies and PHP extensions
 RUN apk add --no-cache \

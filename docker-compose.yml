@@ -5,15 +5,17 @@ services:
       context: .
       dockerfile: Dockerfile
     restart: unless-stopped
+    ports:
+      - "${APP_PORT:-8000}:8000"
     expose:
       - "8000"
     labels:
       - "coolify.managed=true"
       - "traefik.http.services.app.loadbalancer.server.port=8000"
     environment:
-      APP_NAME: "AMYN Madrasah"
+      APP_NAME: "${APP_NAME:-AMYN Madrasah}"
       APP_ENV: ${APP_ENV:-production}
-      APP_KEY: ${APP_KEY:-"base64:7qZ0bY1V4mK9WpX3rL8sN2tU5vY6zA1bC2dE3fG4hI5="}
+      APP_KEY: ${APP_KEY:-}
       APP_DEBUG: ${APP_DEBUG:-"false"}
       APP_URL: ${APP_URL:-"http://localhost:8000"}
       DB_CONNECTION: mysql
@@ -22,6 +24,12 @@ services:
       DB_DATABASE: ${DB_DATABASE:-amyn_madrasah}
       DB_USERNAME: ${DB_USERNAME:-amyn_user}
       DB_PASSWORD: ${DB_PASSWORD:-amyn_secret_password}
+      PHP_CLI_SERVER_WORKERS: ${PHP_CLI_SERVER_WORKERS:-4}
+      SESSION_DRIVER: ${SESSION_DRIVER:-database}
+      CACHE_STORE: ${CACHE_STORE:-database}
+      QUEUE_CONNECTION: ${QUEUE_CONNECTION:-database}
+      FILESYSTEM_DISK: ${FILESYSTEM_DISK:-public}
+      SEED_ON_DEPLOY: ${SEED_ON_DEPLOY:-false}
     volumes:
       - storage_data:/var/www/html/storage
       - uploads_data:/var/www/html/public/uploads
@@ -51,11 +59,14 @@ services:
       interval: 5s
       timeout: 5s
       retries: 10
+      start_period: 15s
 
   # 3. phpMyAdmin Database GUI
   phpmyadmin:
     image: phpmyadmin/phpmyadmin:latest
     restart: unless-stopped
+    ports:
+      - "${PMA_PORT:-8080}:80"
     expose:
       - "80"
     labels:
@@ -82,3 +93,4 @@ volumes:
   mariadb_data:
   storage_data:
   uploads_data:
+

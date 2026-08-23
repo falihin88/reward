@@ -4,7 +4,7 @@ set -e
 # If using MySQL/MariaDB, wait for database host to be ready
 if [ "$DB_CONNECTION" = "mysql" ] || [ "$DB_CONNECTION" = "mariadb" ]; then
     echo "Waiting for MariaDB database host ($DB_HOST:$DB_PORT) to be ready..."
-    until nc -z -v -w30 "$DB_HOST" "$DB_PORT" 2>/dev/null; do
+    until nc -z -v -w 2 "$DB_HOST" "$DB_PORT" 2>/dev/null; do
         echo "MariaDB is unavailable - sleeping 2 seconds..."
         sleep 2
     done
@@ -16,8 +16,20 @@ elif [ "$DB_CONNECTION" = "sqlite" ] || [ -z "$DB_CONNECTION" ]; then
     fi
 fi
 
+# Ensure all required storage subdirectories exist (crucial for Docker volume mounts)
+mkdir -p storage/app/public \
+         storage/framework/cache/data \
+         storage/framework/sessions \
+         storage/framework/views \
+         storage/logs \
+         bootstrap/cache
+
 # Ensure storage directory permissions
 chmod -R 775 storage bootstrap/cache || true
+
+# Ensure storage link exists for public access to uploaded files
+echo "Linking public storage..."
+php artisan storage:link --force || true
 
 # Package Discovery
 echo "Running Package Discovery..."
@@ -41,8 +53,15 @@ else
         echo "SEED_ON_DEPLOY is enabled. Seeding database..."
         php artisan db:seed --force
     fi
+
+    # Optimize Laravel for production environment
+    echo "Optimizing application routes, views, and config for production..."
+    php artisan config:cache || true
+    php artisan route:cache || true
+    php artisan view:cache || true
 fi
 
 # Start Laravel server
-echo "Starting Laravel server on port 8000..."
+echo "Starting Laravel server on port 8000 (workers: ${PHP_CLI_SERVER_WORKERS:-4})..."
 exec php artisan serve --host=0.0.0.0 --port=8000
+
