@@ -4,6 +4,9 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
+      args:
+        APP_ENV: development
+        NODE_ENV: development
     restart: unless-stopped
     extra_hosts:
       - "host.docker.internal:host-gateway"
@@ -43,6 +46,7 @@ services:
     networks:
       - backend-network
       - frontend-network
+      - coolify
 
   # 2. phpMyAdmin Database GUI
   phpmyadmin:
@@ -64,10 +68,13 @@ services:
     networks:
       - backend-network
       - frontend-network
+      - coolify
 
 networks:
   backend-network:
   frontend-network:
+  coolify:
+    name: coolify
 
 volumes:
   storage_data:

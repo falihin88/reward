@@ -80,20 +80,19 @@ MYSQL_ROOT_PASSWORD=YOUR_STRONG_ROOT_DATABASE_PASSWORD
 
 ---
 
-## 🛠️ Troubleshooting: "No Server Found" / 502 Bad Gateway in Coolify
+## 🛠️ Troubleshooting: "WARNING: Still cannot reach DB_HOST" in Coolify
 
-If Coolify displays a **"No server found"** or **"No healthy upstream server"** error after a **successful** deployment, the container is not reachable/healthy for the proxy (Traefik skips unhealthy containers, which produces exactly this error):
+If your deployment logs show `WARNING: Still cannot reach <host-or-id>:3306`, it means the `app` container cannot resolve or connect to your separate MariaDB instance.
 
-1. **Resource type must be "Docker Compose"**:
-   - The resource MUST be added as **Docker Compose** (not a single "Dockerfile" application). A single-application deploy has no `mariadb` service, so `DB_HOST=mariadb` never resolves and the container never becomes healthy.
-2. **Traefik backend port comes from the domain, not the compose file**:
-   - Coolify ignores `ports:`/`expose:` in your compose file when generating proxy routes. The container port **must** be embedded in the service's **Domains** field: `https://madrasah.yourdomain.com:8000`. The `:8000` only sets the backend port; visitors still use standard HTTPS on port 443.
-3. **Give first deploy time to become healthy**:
-   - The `app` service healthcheck now uses `start_period: 120s` with generous retries. On a fresh deploy MariaDB must initialize (first boot) before migrations can run. Do not expect the domain to respond for the first few minutes.
-4. **Base Directory**:
-   - Set **Base Directory** in Coolify resource settings to `/` (root). The repository root contains `docker-compose.yml`, `Dockerfile`, and `docker-entrypoint.sh`.
-5. **Check container health & logs**:
-   - In Coolify, open the `app` service logs. If you see `WARNING: Still cannot reach mariadb:3306`, the DB hostname is not resolvable (see #1). If migrations fail, fix the DB credentials in the Environment Variables before redeploying.
+### Solution A: Connect both resources to the `coolify` Docker network (Recommended)
+1. In Coolify Dashboard, go to your **MariaDB Resource** -> **Settings** -> **Network** -> Ensure it is attached to the **`coolify`** network.
+2. In your **App (Docker Compose) Resource** -> **Settings** -> **Network** -> Ensure it is attached to the **`coolify`** network.
+3. In App Environment Variables, set `DB_HOST` to your MariaDB internal service name/ID (e.g., `rolq9rulhuh46kmuxx8mjrfk`).
+
+### Solution B: Connect via Host Gateway (`host.docker.internal`)
+If your MariaDB is running directly on the host server or has port `3306` published to host:
+1. In App Environment Variables, set `DB_HOST=host.docker.internal`.
+2. Our `docker-compose.yml` already includes `extra_hosts: ["host.docker.internal:host-gateway"]` to route `host.docker.internal` directly to the host machine's network.
 
 ---
 

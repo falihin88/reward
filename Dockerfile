@@ -1,7 +1,8 @@
 # Stage 1: Build Frontend Assets
 FROM node:20-alpine AS node_builder
+ARG NODE_ENV=development
+ENV NODE_ENV=${NODE_ENV}
 WORKDIR /app
-ENV NODE_ENV=development
 COPY package.json package-lock.json ./
 RUN npm ci
 COPY . .
@@ -11,7 +12,9 @@ RUN npm run build
 FROM php:8.4-cli-alpine
 
 # Set Environment Variables
-ENV COMPOSER_ALLOW_SUPERUSER=1 \
+ARG APP_ENV=development
+ENV APP_ENV=${APP_ENV} \
+    COMPOSER_ALLOW_SUPERUSER=1 \
     PHP_CLI_SERVER_WORKERS=4
 
 # Install system dependencies and PHP extensions

@@ -9,8 +9,9 @@ if [ "$DB_CONNECTION" = "mysql" ] || [ "$DB_CONNECTION" = "mariadb" ]; then
         DB_WAIT_ATTEMPTS=$((DB_WAIT_ATTEMPTS + 1))
         if [ $((DB_WAIT_ATTEMPTS % 15)) -eq 0 ]; then
             echo "WARNING: Still cannot reach $DB_HOST:$DB_PORT after $((DB_WAIT_ATTEMPTS * 2))s."
-            echo "WARNING: Ensure this resource is deployed as 'Docker Compose' in Coolify (not as a single application),"
-            echo "WARNING: and that DB_HOST is set to the compose service name 'mariadb'."
+            echo "WARNING: Check that DB_HOST ('$DB_HOST') and DB_PORT ('$DB_PORT') are correct."
+            echo "WARNING: 1. If MariaDB is running on the host OS, set DB_HOST=host.docker.internal."
+            echo "WARNING: 2. If MariaDB is another Coolify resource, connect both resources to the 'coolify' network or use host.docker.internal."
         fi
         echo "MariaDB is unavailable - sleeping 2 seconds..."
         sleep 2
