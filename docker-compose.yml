@@ -75,6 +75,7 @@ networks:
   frontend-network:
   coolify:
     name: coolify
+    external: true
 
 volumes:
   storage_data:
