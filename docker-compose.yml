@@ -1,18 +1,14 @@
-# AMYN Madrasah — Laravel application (single service)
-#
-# The database is a SEPARATE standalone MariaDB instance in Coolify, not
-# bundled here. Configure the DB_* variables in Coolify's Environment
-# Variables (or a .env file) — the entrypoint refuses to start without them.
+# AMYN Madrasah — Laravel 13 (app + bundled MariaDB)
 #
 # Coolify notes:
-#   - The `app` service "Domains" field must include the container port,
-#     e.g. https://madrasah.yourdomain.com:8000  (Coolify does not read
-#     `expose:`/`ports:` to determine the proxy backend port).
-#   - To reach a standalone Coolify MariaDB instance, both this app and the
-#     database must share a Docker network. Standalone Coolify databases
-#     default to the `coolify` network, attached below.
-#   - Set DB_HOST to the MariaDB resource's internal host (its UUID, shown in
-#     the "Internal connection string"), NOT `mariadb` or `localhost`.
+#   - Do NOT define custom `networks:` here. Coolify manages the Traefik proxy
+#     network and auto-generates HTTPS/domain routing. The `app` and `mariadb`
+#     services talk to each other over the default compose network via service name.
+#   - Set the `app` service "Domains" field to `https://your-domain:8000`.
+#     The `:8000` only tells the proxy the container port; visitors still use 443.
+#   - Set APP_KEY in Coolify (a fixed `base64:...` value) so sessions survive
+#     redeploys. The entrypoint only auto-generates one when APP_KEY is empty.
+#   - Override DB_PASSWORD / MYSQL_ROOT_PASSWORD in Coolify for production.
 
 services:
   app:
@@ -20,50 +16,60 @@ services:
       context: .
       dockerfile: Dockerfile
     restart: unless-stopped
-
     expose:
       - "8000"
-
     healthcheck:
       test: ["CMD-SHELL", "curl -fsS http://localhost:8000/up || exit 1"]
       interval: 15s
       timeout: 10s
       retries: 10
       start_period: 60s
-
     environment:
       APP_NAME: "${APP_NAME:-AMYN Madrasah}"
-      APP_ENV: ${APP_ENV:-production}
-      APP_KEY: ${APP_KEY:-}
-      APP_DEBUG: ${APP_DEBUG:-false}
-      APP_URL: ${APP_URL:-http://localhost:8000}
+      APP_ENV: production
+      APP_DEBUG: "false"
+      APP_KEY: "${APP_KEY:-}"
+      APP_URL: "${APP_URL:-http://localhost}"
 
-      DB_CONNECTION: ${DB_CONNECTION:-mysql}
-      DB_HOST: ${DB_HOST}
-      DB_PORT: ${DB_PORT:-3306}
-      DB_DATABASE: ${DB_DATABASE}
-      DB_USERNAME: ${DB_USERNAME}
-      DB_PASSWORD: ${DB_PASSWORD}
-      MYSQL_ATTR_SSL_CA: "${MYSQL_ATTR_SSL_CA:-/etc/ssl/certs/ca-certificates.crt}"
+      DB_CONNECTION: mysql
+      DB_HOST: mariadb
+      DB_PORT: "3306"
+      DB_DATABASE: "${DB_DATABASE:-amyn_madrasah}"
+      DB_USERNAME: "${DB_USERNAME:-amyn_user}"
+      DB_PASSWORD: "${DB_PASSWORD:-secret}"
 
-      SESSION_DRIVER: ${SESSION_DRIVER:-database}
-      CACHE_STORE: ${CACHE_STORE:-database}
-      QUEUE_CONNECTION: ${QUEUE_CONNECTION:-database}
-      FILESYSTEM_DISK: ${FILESYSTEM_DISK:-public}
-      SEED_ON_DEPLOY: ${SEED_ON_DEPLOY:-false}
+      SESSION_DRIVER: database
+      CACHE_STORE: database
+      QUEUE_CONNECTION: database
+      FILESYSTEM_DISK: public
+      SEED_ON_DEPLOY: "${SEED_ON_DEPLOY:-false}"
 
     volumes:
       - storage_data:/var/www/html/storage
       - uploads_data:/var/www/html/public/uploads
+    depends_on:
+      mariadb:
+        condition: service_healthy
 
-    networks:
-      - coolify
-
-networks:
-  coolify:
-    name: coolify
-    external: true
+  mariadb:
+    image: mariadb:11
+    restart: unless-stopped
+    command: --skip-name-resolve --character-set-server=utf8mb4 --collation-server=utf8mb4_unicode_ci
+    environment:
+      MYSQL_ROOT_PASSWORD: "${MYSQL_ROOT_PASSWORD:-root_secret}"
+      MYSQL_DATABASE: "${DB_DATABASE:-amyn_madrasah}"
+      MYSQL_USER: "${DB_USERNAME:-amyn_user}"
+      MYSQL_PASSWORD: "${DB_PASSWORD:-secret}"
+    volumes:
+      - mariadb_data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "healthcheck.sh", "--connect", "--innodb_initialized"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+      start_period: 15s
 
 volumes:
   storage_data:
   uploads_data:
+  mariadb_data:
