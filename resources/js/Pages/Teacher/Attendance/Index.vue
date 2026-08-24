@@ -81,7 +81,7 @@
       </div>
 
       <!-- Attendance Table Form -->
-      <form @submit.prevent="saveAttendance" class="space-y-6">
+      <form v-if="students && students.length > 0" @submit.prevent="saveAttendance" class="space-y-6">
         <div class="rounded-3xl bg-white dark:bg-slate-900/90 border border-slate-200 dark:border-slate-800 shadow-xl overflow-hidden">
           <div class="overflow-x-auto">
             <table class="w-full text-left text-sm text-slate-800 dark:text-slate-200">
@@ -217,6 +217,20 @@
           </button>
         </div>
       </form>
+
+      <!-- Empty State when no students exist -->
+      <div v-else class="p-12 text-center rounded-3xl bg-white dark:bg-slate-900/90 border border-slate-200 dark:border-slate-800 shadow-xl space-y-4">
+        <div class="w-16 h-16 mx-auto rounded-2xl bg-amber-500/10 text-amber-500 flex items-center justify-center">
+          <Users class="w-8 h-8" />
+        </div>
+        <h3 class="text-lg font-bold text-slate-900 dark:text-slate-100">No Students Found in Roster</h3>
+        <p class="text-xs text-slate-500 dark:text-slate-400 max-w-sm mx-auto">
+          There are currently no student accounts registered for this campus. Add new students from the Student Roster to begin recording attendance.
+        </p>
+        <Link href="/teacher" class="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-amber-500 text-slate-950 font-bold text-xs shadow-md hover:scale-105 transition-transform">
+          <Users class="w-4 h-4" /> Go to Student Roster
+        </Link>
+      </div>
     </div>
   </AppLayout>
 </template>

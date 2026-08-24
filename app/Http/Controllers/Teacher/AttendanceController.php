@@ -18,10 +18,6 @@ class AttendanceController extends Controller
         $date = $request->query('date', now()->toDateString());
 
         $students = User::where('role', 'student')
-            ->where(function ($query) use ($teacher) {
-                $query->where('teacher_id', $teacher->id)
-                      ->orWhereNull('teacher_id');
-            })
             ->orderBy('name', 'asc')
             ->get(['id', 'name', 'email', 'points', 'current_streak']);
 
