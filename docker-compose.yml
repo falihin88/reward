@@ -44,6 +44,7 @@ services:
       DB_DATABASE: ${DB_DATABASE}
       DB_USERNAME: ${DB_USERNAME}
       DB_PASSWORD: ${DB_PASSWORD}
+      MYSQL_ATTR_SSL_CA: "${MYSQL_ATTR_SSL_CA:-/etc/ssl/certs/ca-certificates.crt}"
 
       SESSION_DRIVER: ${SESSION_DRIVER:-database}
       CACHE_STORE: ${CACHE_STORE:-database}

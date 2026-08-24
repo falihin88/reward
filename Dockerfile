@@ -27,6 +27,7 @@ RUN apk add --no-cache \
     curl \
     git \
     netcat-openbsd \
+    ca-certificates \
     linux-headers \
     && docker-php-ext-install \
     intl \
