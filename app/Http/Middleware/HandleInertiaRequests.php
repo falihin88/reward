@@ -32,7 +32,7 @@ class HandleInertiaRequests extends Middleware
     {
         $user = $request->user();
         $impersonatorId = $request->session()->get('impersonator_id');
-        $impersonator = $impersonatorId ? User::find($impersonatorId) : null;
+        $impersonator = $impersonatorId ? User::withoutGlobalScopes()->find($impersonatorId) : null;
 
         $tenant = app()->bound('tenant') ? app('tenant') : null;
         $availableTenants = [];

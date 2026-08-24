@@ -92,7 +92,7 @@ class AuthController extends Controller
     {
         if ($request->session()->has('impersonator_id')) {
             $impersonatorId = $request->session()->get('impersonator_id');
-            $originalUser = User::find($impersonatorId);
+            $originalUser = User::withoutGlobalScopes()->find($impersonatorId);
             $request->session()->forget('impersonator_id');
 
             if ($originalUser) {
