@@ -25,26 +25,26 @@ class Tenant extends Model
 
     public function users()
     {
-        return $this->hasMany(User::class);
+        return $this->hasMany(User::class)->withoutGlobalScopes();
     }
 
     public function cards()
     {
-        return $this->hasMany(Card::class);
+        return $this->hasMany(Card::class)->withoutGlobalScopes();
     }
 
     public function pointTransactions()
     {
-        return $this->hasMany(PointTransaction::class);
+        return $this->hasMany(PointTransaction::class)->withoutGlobalScopes();
     }
 
     public function attendances()
     {
-        return $this->hasMany(Attendance::class);
+        return $this->hasMany(Attendance::class)->withoutGlobalScopes();
     }
 
     public function settings()
     {
-        return $this->hasMany(Setting::class);
+        return $this->hasMany(Setting::class)->withoutGlobalScopes();
     }
 }

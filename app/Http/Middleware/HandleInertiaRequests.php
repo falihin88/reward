@@ -35,7 +35,7 @@ class HandleInertiaRequests extends Middleware
         $impersonator = $impersonatorId ? User::find($impersonatorId) : null;
 
         $tenant = app()->bound('tenant') ? app('tenant') : null;
-        $availableTenants = ($user && in_array($user->role, ['admin', 'teacher']))
+        $availableTenants = ($user && $user->isAdmin())
             ? \App\Models\Tenant::where('is_active', true)->get(['id', 'name', 'slug', 'code', 'accent_color', 'logo_url'])
             : [];
 

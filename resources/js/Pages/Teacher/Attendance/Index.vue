@@ -246,8 +246,9 @@ const dateInput = ref(props.selectedDate);
 const recordsMap = reactive({});
 
 const initializeRecords = () => {
+  if (!props.students) return;
   props.students.forEach((student) => {
-    const existing = props.attendances[student.id];
+    const existing = props.attendances && typeof props.attendances === 'object' ? props.attendances[student.id] : null;
     recordsMap[student.id] = {
       student_id: student.id,
       status: existing ? existing.status : 'present',
@@ -260,7 +261,7 @@ onMounted(() => {
   initializeRecords();
 });
 
-watch(() => props.attendances, () => {
+watch([() => props.attendances, () => props.students], () => {
   initializeRecords();
 });
 

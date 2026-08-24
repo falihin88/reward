@@ -66,6 +66,10 @@ class TenantController extends Controller
 
     public function switch(Tenant $tenant)
     {
+        if (!auth()->user()?->isAdmin()) {
+            abort(403, 'Only administrators are allowed to switch campus contexts.');
+        }
+
         if (!$tenant->is_active) {
             return back()->with('error', "Tenant '{$tenant->name}' is inactive.");
         }

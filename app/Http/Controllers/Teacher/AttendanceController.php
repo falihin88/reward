@@ -32,7 +32,7 @@ class AttendanceController extends Controller
 
         return Inertia::render('Teacher/Attendance/Index', [
             'students' => $students,
-            'attendances' => $attendances,
+            'attendances' => (object) $attendances->toArray(),
             'selectedDate' => $date,
         ]);
     }
@@ -59,7 +59,7 @@ class AttendanceController extends Controller
             $status = $item['status'];
             $notes = $item['notes'] ?? null;
 
-            // Define points rule: Present = 100 Pts, Late = 50 Pts
+            // Define points rule: Present = 100 Pts, Late = 50 Pts, Absent/Excused = 0 Pts
             $targetPoints = match ($status) {
                 'present' => 100,
                 'late' => 50,
@@ -70,7 +70,7 @@ class AttendanceController extends Controller
                 ->where('date', $date)
                 ->first();
 
-            $prevPoints = $existing ? $existing->points_awarded : 0;
+            $prevPoints = $existing ? (int) $existing->points_awarded : 0;
             $pointsDiff = $targetPoints - $prevPoints;
 
             Attendance::updateOrCreate(
@@ -79,6 +79,7 @@ class AttendanceController extends Controller
                     'date' => $date,
                 ],
                 [
+                    'tenant_id' => $teacher->tenant_id,
                     'teacher_id' => $teacher->id,
                     'status' => $status,
                     'points_awarded' => $targetPoints,
@@ -86,13 +87,20 @@ class AttendanceController extends Controller
                 ]
             );
 
-            // Award difference in points to student if positive
-            if ($pointsDiff > 0) {
+            // Award/adjust difference in points if there is a change
+            if ($pointsDiff !== 0) {
                 $student = User::find($studentId);
                 if ($student) {
                     try {
-                        $reason = $status === 'present' ? 'attendance_present' : 'attendance_late';
-                        $noteText = "Attendance on {$date}: " . strtoupper($status) . " (+{$pointsDiff} Pts)";
+                        $reason = match (true) {
+                            $pointsDiff > 0 && $status === 'present' => 'attendance_present',
+                            $pointsDiff > 0 && $status === 'late' => 'attendance_late',
+                            $pointsDiff < 0 => 'attendance_deduction',
+                            default => 'attendance_update',
+                        };
+
+                        $sign = $pointsDiff > 0 ? "+{$pointsDiff}" : "{$pointsDiff}";
+                        $noteText = "Attendance on {$date} (" . strtoupper($status) . "): {$sign} Pts";
                         
                         $pointService->awardOrDeductPointsByTeacher(
                             $student,
@@ -101,15 +109,18 @@ class AttendanceController extends Controller
                             $reason,
                             $noteText
                         );
-                        $awardedCount++;
-                        $totalPointsAwarded += $pointsDiff;
+
+                        if ($pointsDiff > 0) {
+                            $awardedCount++;
+                            $totalPointsAwarded += $pointsDiff;
+                        }
                     } catch (Exception $e) {
-                        // Continue processing other students
+                        // Continue processing remaining students
                     }
                 }
             }
         }
 
-        return back()->with('success', "Attendance saved for {$date}! Awarded total of +{$totalPointsAwarded} points to attending students.");
+        return back()->with('success', "Attendance saved for {$date}! Total +{$totalPointsAwarded} points awarded.");
     }
 }

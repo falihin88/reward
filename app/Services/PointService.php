@@ -70,10 +70,11 @@ class PointService
         $student->save();
 
         return PointTransaction::create([
+            'tenant_id' => $student->tenant_id ?? $teacher->tenant_id,
             'user_id' => $student->id,
             'teacher_id' => $teacher->id,
             'points' => $points,
-            'reason' => $points < 0 ? 'teacher_deduction' : 'teacher_award',
+            'reason' => $reason,
             'note' => $note,
         ]);
     }
