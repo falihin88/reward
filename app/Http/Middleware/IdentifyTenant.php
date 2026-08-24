@@ -18,49 +18,35 @@ class IdentifyTenant
             if (auth()->check()) {
                 $user = auth()->user();
 
-                if ($user->isAdmin()) {
-                    // Admins can switch active campus via session, header, or default to their assigned tenant
-                    if (session()->has('active_tenant_id')) {
-                        $tenant = Tenant::where('is_active', true)->find(session('active_tenant_id'));
+                $requestedTenantId = session('active_tenant_id')
+                    ?? $request->header('X-Tenant-ID')
+                    ?? $request->query('tenant_id')
+                    ?? $request->input('tenant_id');
+
+                if ($requestedTenantId) {
+                    $candidate = Tenant::where('is_active', true)->find($requestedTenantId);
+                    if ($candidate && $user->canAccessTenant($candidate)) {
+                        $tenant = $candidate;
                     }
-                    if (!$tenant && $request->hasHeader('X-Tenant-ID')) {
-                        $tenant = Tenant::where('is_active', true)->find($request->header('X-Tenant-ID'));
-                    }
-                    if (!$tenant && $user->tenant_id) {
-                        $tenant = Tenant::where('is_active', true)->find($user->tenant_id);
-                    }
-                } elseif ($user->isTeacher() && $user->managedTenants()->exists()) {
-                    // Teachers granted multi-tenant access can switch among their assigned tenants
-                    if (session()->has('active_tenant_id')) {
-                        $tenant = $user->managedTenants()
-                            ->where('tenants.is_active', true)
-                            ->find(session('active_tenant_id'));
-                    }
-                    if (!$tenant && $request->hasHeader('X-Tenant-ID')) {
-                        $tenant = $user->managedTenants()
-                            ->where('tenants.is_active', true)
-                            ->find($request->header('X-Tenant-ID'));
-                    }
-                    if (!$tenant && $user->tenant_id) {
-                        $tenant = Tenant::where('is_active', true)->find($user->tenant_id);
-                    }
-                } else {
-                    // Teachers & Students are locked to their assigned campus/tenant
-                    if ($user->tenant_id) {
-                        $tenant = Tenant::where('is_active', true)->find($user->tenant_id);
-                    }
+                }
+
+                if (!$tenant && $user->tenant_id) {
+                    $tenant = Tenant::where('is_active', true)->find($user->tenant_id);
                 }
             }
 
-            // 2. Unauthenticated requests or fallback resolution
+            // 2. Fallback resolution for unauthenticated API requests or default tenant
             if (!$tenant) {
-                if (session()->has('active_tenant_id')) {
-                    $tenant = Tenant::where('is_active', true)->find(session('active_tenant_id'));
+                $requestedTenantId = session('active_tenant_id')
+                    ?? $request->header('X-Tenant-ID')
+                    ?? $request->query('tenant_id')
+                    ?? $request->input('tenant_id');
+
+                if ($requestedTenantId) {
+                    $tenant = Tenant::where('is_active', true)->find($requestedTenantId);
                 }
-                if (!$tenant && $request->hasHeader('X-Tenant-ID')) {
-                    $tenant = Tenant::where('is_active', true)->find($request->header('X-Tenant-ID'));
-                }
-                if (!$tenant && $request->hasHeader('X-Tenant-Slug')) {
+
+                if (!$tenant && $request->header('X-Tenant-Slug')) {
                     $tenant = Tenant::where('is_active', true)->where('slug', $request->header('X-Tenant-Slug'))->first();
                 }
                 if (!$tenant && $request->route('tenant_slug')) {

@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Models\Attendance;
 use App\Models\User;
+use App\Scopes\TenantScope;
 use App\Services\PointService;
 use Exception;
 use Illuminate\Http\JsonResponse;
@@ -14,12 +15,21 @@ class AttendanceApiController extends Controller
 {
     public function index(Request $request): JsonResponse
     {
+        $teacher = $request->user();
         $date = $request->query('date', now()->toDateString());
         $tenantId = $request->query('tenant_id');
 
-        $query = User::where('role', 'student')->orderBy('name', 'asc');
+        $query = User::withoutGlobalScope(TenantScope::class)->where('role', 'student')->orderBy('name', 'asc');
         if ($tenantId) {
             $query->where('tenant_id', $tenantId);
+        } elseif ($teacher) {
+            $allowedTenantIds = $teacher->availableTenants()->pluck('id');
+            $query->where(function ($q) use ($teacher, $allowedTenantIds) {
+                if ($allowedTenantIds->isNotEmpty()) {
+                    $q->whereIn('tenant_id', $allowedTenantIds);
+                }
+                $q->orWhere('teacher_id', $teacher->id);
+            });
         }
 
         $students = $query->get(['id', 'name', 'email', 'points', 'current_streak', 'tenant_id']);
@@ -83,13 +93,15 @@ class AttendanceApiController extends Controller
             $prevPoints = $existing ? (int) $existing->points_awarded : 0;
             $pointsDiff = $targetPoints - $prevPoints;
 
+            $student = User::withoutGlobalScope(TenantScope::class)->find($studentId);
+
             Attendance::updateOrCreate(
                 [
                     'student_id' => $studentId,
                     'date' => $date,
                 ],
                 [
-                    'tenant_id' => $teacher?->tenant_id,
+                    'tenant_id' => $student?->tenant_id ?? $teacher?->tenant_id,
                     'teacher_id' => $teacher?->id,
                     'status' => $status,
                     'points_awarded' => $targetPoints,
@@ -97,35 +109,32 @@ class AttendanceApiController extends Controller
                 ]
             );
 
-            if ($pointsDiff !== 0) {
-                $student = User::find($studentId);
-                if ($student) {
-                    try {
-                        $reason = match (true) {
-                            $pointsDiff > 0 && $status === 'present' => 'attendance_present',
-                            $pointsDiff > 0 && $status === 'late' => 'attendance_late',
-                            $pointsDiff < 0 => 'attendance_deduction',
-                            default => 'attendance_update',
-                        };
+            if ($pointsDiff !== 0 && $student) {
+                try {
+                    $reason = match (true) {
+                        $pointsDiff > 0 && $status === 'present' => 'attendance_present',
+                        $pointsDiff > 0 && $status === 'late' => 'attendance_late',
+                        $pointsDiff < 0 => 'attendance_deduction',
+                        default => 'attendance_update',
+                    };
 
-                        $sign = $pointsDiff > 0 ? "+{$pointsDiff}" : "{$pointsDiff}";
-                        $noteText = "Attendance on {$date} (" . strtoupper($status) . "): {$sign} Pts";
+                    $sign = $pointsDiff > 0 ? "+{$pointsDiff}" : "{$pointsDiff}";
+                    $noteText = "Attendance on {$date} (" . strtoupper($status) . "): {$sign} Pts";
 
-                        $pointService->awardOrDeductPointsByTeacher(
-                            $student,
-                            $teacher ?? $student,
-                            $pointsDiff,
-                            $reason,
-                            $noteText
-                        );
+                    $pointService->awardOrDeductPointsByTeacher(
+                        $student,
+                        $teacher ?? $student,
+                        $pointsDiff,
+                        $reason,
+                        $noteText
+                    );
 
-                        if ($pointsDiff > 0) {
-                            $awardedCount++;
-                            $totalPointsAwarded += $pointsDiff;
-                        }
-                    } catch (Exception $e) {
-                        // Continue processing remaining student records
+                    if ($pointsDiff > 0) {
+                        $awardedCount++;
+                        $totalPointsAwarded += $pointsDiff;
                     }
+                } catch (Exception $e) {
+                    // Continue processing remaining records
                 }
             }
         }

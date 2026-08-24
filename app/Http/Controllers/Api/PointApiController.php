@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Models\PointTransaction;
 use App\Models\User;
+use App\Scopes\TenantScope;
 use App\Services\PointService;
 use Exception;
 use Illuminate\Http\JsonResponse;
@@ -22,7 +23,7 @@ class PointApiController extends Controller
         ]);
 
         $teacher = $request->user() ?? User::where('role', 'teacher')->first() ?? User::first();
-        $student = User::where('role', 'student')->findOrFail($request->student_id);
+        $student = User::withoutGlobalScope(TenantScope::class)->where('role', 'student')->findOrFail($request->student_id);
 
         try {
             $reason = $request->reason ?? ($request->points > 0 ? 'teacher_award' : 'teacher_deduction');
@@ -66,14 +67,24 @@ class PointApiController extends Controller
 
     public function transactions(Request $request): JsonResponse
     {
+        $teacher = $request->user();
         $tenantId = $request->query('tenant_id');
 
-        $query = PointTransaction::with('user:id,name,email')->latest();
+        $query = PointTransaction::with(['user' => function ($q) {
+            $q->withoutGlobalScopes();
+        }])->latest();
 
         if ($tenantId) {
             $query->whereHas('user', function ($q) use ($tenantId) {
-                $q->where('tenant_id', $tenantId);
+                $q->withoutGlobalScopes()->where('tenant_id', $tenantId);
             });
+        } elseif ($teacher) {
+            $allowedTenantIds = $teacher->availableTenants()->pluck('id');
+            if ($allowedTenantIds->isNotEmpty()) {
+                $query->whereHas('user', function ($q) use ($allowedTenantIds) {
+                    $q->withoutGlobalScopes()->whereIn('tenant_id', $allowedTenantIds);
+                });
+            }
         }
 
         $transactions = $query->take(30)->get()->map(function ($tx) {

@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Models\User;
+use App\Scopes\TenantScope;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
@@ -12,14 +13,24 @@ class StudentApiController extends Controller
 {
     public function index(Request $request): JsonResponse
     {
+        $teacher = $request->user();
         $tenantId = $request->query('tenant_id');
         $search = $request->query('search');
 
-        $query = User::where('role', 'student')
+        $query = User::withoutGlobalScope(TenantScope::class)
+            ->where('role', 'student')
             ->withCount('cards as unlocked_cards_count');
 
         if ($tenantId) {
             $query->where('tenant_id', $tenantId);
+        } elseif ($teacher) {
+            $allowedTenantIds = $teacher->availableTenants()->pluck('id');
+            $query->where(function ($q) use ($teacher, $allowedTenantIds) {
+                if ($allowedTenantIds->isNotEmpty()) {
+                    $q->whereIn('tenant_id', $allowedTenantIds);
+                }
+                $q->orWhere('teacher_id', $teacher->id);
+            });
         }
 
         if ($search) {

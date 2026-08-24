@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Models\Tenant;
+use App\Models\User;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
@@ -11,12 +12,21 @@ class TenantApiController extends Controller
 {
     public function index(Request $request): JsonResponse
     {
-        $tenants = Tenant::where('is_active', true)
-            ->withCount(['users as student_count' => function ($q) {
-                $q->where('role', 'student');
-            }])
-            ->latest()
-            ->get();
+        $user = $request->user();
+
+        if ($user) {
+            $tenants = $user->availableTenants();
+            $tenants->loadCount(['users as student_count' => function ($q) {
+                $q->withoutGlobalScopes()->where('role', 'student');
+            }]);
+        } else {
+            $tenants = Tenant::where('is_active', true)
+                ->withCount(['users as student_count' => function ($q) {
+                    $q->withoutGlobalScopes()->where('role', 'student');
+                }])
+                ->latest()
+                ->get();
+        }
 
         return response()->json([
             'success' => true,
@@ -26,6 +36,15 @@ class TenantApiController extends Controller
 
     public function switch(Request $request, Tenant $tenant): JsonResponse
     {
+        $user = $request->user();
+
+        if ($user && !$user->canAccessTenant($tenant)) {
+            return response()->json([
+                'success' => false,
+                'message' => "You do not have permission to access campus '{$tenant->name}'.",
+            ], 403);
+        }
+
         if (!$tenant->is_active) {
             return response()->json([
                 'success' => false,
