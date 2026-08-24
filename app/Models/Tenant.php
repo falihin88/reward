@@ -28,6 +28,11 @@ class Tenant extends Model
         return $this->hasMany(User::class)->withoutGlobalScopes();
     }
 
+    public function managers()
+    {
+        return $this->belongsToMany(User::class, 'tenant_user');
+    }
+
     public function cards()
     {
         return $this->hasMany(Card::class)->withoutGlobalScopes();

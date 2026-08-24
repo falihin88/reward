@@ -9,6 +9,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
+use Illuminate\Support\Collection;
 
 class User extends Authenticatable
 {
@@ -84,5 +85,61 @@ class User extends Authenticatable
     public function isStudent(): bool
     {
         return $this->role === 'student';
+    }
+
+    /**
+     * Tenants this user is granted access to manage (in addition to their
+     * primary tenant_id). Admin users are handled separately in availableTenants().
+     */
+    public function managedTenants(): BelongsToMany
+    {
+        return $this->belongsToMany(Tenant::class, 'tenant_user');
+    }
+
+    /**
+     * Tenants the user can currently switch between.
+     * Admins see all active tenants; teachers see their primary tenant plus any
+     * explicitly assigned managed tenants; students get none.
+     */
+    public function availableTenants(): Collection
+    {
+        if ($this->isAdmin()) {
+            return Tenant::where('is_active', true)->get();
+        }
+
+        if (! $this->isTeacher()) {
+            return collect();
+        }
+
+        $ids = $this->managedTenants()
+            ->pluck('tenants.id')
+            ->push($this->tenant_id)
+            ->filter()
+            ->unique()
+            ->values();
+
+        if ($ids->isEmpty()) {
+            return collect();
+        }
+
+        return Tenant::where('is_active', true)->whereIn('id', $ids)->get();
+    }
+
+    /**
+     * Whether the user may operate within the given tenant context.
+     */
+    public function canAccessTenant(Tenant|int $tenant): bool
+    {
+        if ($this->isAdmin()) {
+            return true;
+        }
+
+        $tenantId = $tenant instanceof Tenant ? $tenant->id : $tenant;
+
+        if ($this->tenant_id !== null && (int) $this->tenant_id === (int) $tenantId) {
+            return true;
+        }
+
+        return $this->managedTenants()->whereKey($tenantId)->exists();
     }
 }

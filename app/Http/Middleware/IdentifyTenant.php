@@ -29,8 +29,23 @@ class IdentifyTenant
                     if (!$tenant && $user->tenant_id) {
                         $tenant = Tenant::where('is_active', true)->find($user->tenant_id);
                     }
+                } elseif ($user->isTeacher() && $user->managedTenants()->exists()) {
+                    // Teachers granted multi-tenant access can switch among their assigned tenants
+                    if (session()->has('active_tenant_id')) {
+                        $tenant = $user->managedTenants()
+                            ->where('tenants.is_active', true)
+                            ->find(session('active_tenant_id'));
+                    }
+                    if (!$tenant && $request->hasHeader('X-Tenant-ID')) {
+                        $tenant = $user->managedTenants()
+                            ->where('tenants.is_active', true)
+                            ->find($request->header('X-Tenant-ID'));
+                    }
+                    if (!$tenant && $user->tenant_id) {
+                        $tenant = Tenant::where('is_active', true)->find($user->tenant_id);
+                    }
                 } else {
-                    // Teachers & Students are strictly locked to their assigned campus/tenant
+                    // Teachers & Students are locked to their assigned campus/tenant
                     if ($user->tenant_id) {
                         $tenant = Tenant::where('is_active', true)->find($user->tenant_id);
                     }

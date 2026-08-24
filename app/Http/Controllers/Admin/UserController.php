@@ -12,16 +12,19 @@ class UserController extends Controller
 {
     public function index()
     {
-        $users = User::with('teacher')
+        $users = User::with(['teacher', 'managedTenants'])
             ->orderBy('role')
             ->orderBy('name')
-            ->paginate(15);
+            ->paginate(15)
+            ->through(fn ($user) => $user->setAttribute('managed_tenant_ids', $user->managedTenants->pluck('id')->values()->toArray()));
 
         $teachers = User::where('role', 'teacher')->get(['id', 'name']);
+        $tenants = \App\Models\Tenant::orderBy('name')->get(['id', 'name', 'code']);
 
         return Inertia::render('Admin/Users/Index', [
             'users' => $users,
             'teachers' => $teachers,
+            'tenants' => $tenants,
         ]);
     }
 
@@ -33,11 +36,18 @@ class UserController extends Controller
             'password' => ['required', 'string', 'min:6'],
             'role' => ['required', 'in:admin,teacher,student'],
             'teacher_id' => ['nullable', 'exists:users,id'],
+            'tenant_ids' => ['nullable', 'array'],
+            'tenant_ids.*' => ['exists:tenants,id'],
         ]);
 
         $validated['password'] = Hash::make($validated['password']);
 
-        User::create($validated);
+        $tenantIds = $request->input('tenant_ids', []);
+        unset($validated['tenant_ids']);
+
+        $user = User::create($validated);
+
+        $user->managedTenants()->sync($user->isTeacher() ? $tenantIds : []);
 
         return back()->with('success', 'User created successfully.');
     }
@@ -49,13 +59,20 @@ class UserController extends Controller
             'email' => ['required', 'string', 'email', 'max:255', 'unique:users,email,' . $user->id],
             'role' => ['required', 'in:admin,teacher,student'],
             'teacher_id' => ['nullable', 'exists:users,id'],
+            'tenant_ids' => ['nullable', 'array'],
+            'tenant_ids.*' => ['exists:tenants,id'],
         ]);
 
         if ($request->filled('password')) {
             $validated['password'] = Hash::make($request->password);
         }
 
+        $tenantIds = $request->input('tenant_ids', []);
+        unset($validated['tenant_ids']);
+
         $user->update($validated);
+
+        $user->managedTenants()->sync($user->isTeacher() ? $tenantIds : []);
 
         return back()->with('success', 'User updated successfully.');
     }

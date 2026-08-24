@@ -35,9 +35,21 @@ class HandleInertiaRequests extends Middleware
         $impersonator = $impersonatorId ? User::find($impersonatorId) : null;
 
         $tenant = app()->bound('tenant') ? app('tenant') : null;
-        $availableTenants = ($user && $user->isAdmin())
-            ? \App\Models\Tenant::where('is_active', true)->get(['id', 'name', 'slug', 'code', 'accent_color', 'logo_url'])
-            : [];
+        $availableTenants = [];
+        if ($user && $user->isAdmin()) {
+            $availableTenants = \App\Models\Tenant::where('is_active', true)->get(['id', 'name', 'slug', 'code', 'accent_color', 'logo_url']);
+        } elseif ($user && $user->isTeacher()) {
+            $availableTenants = $user->availableTenants()
+                ->map(fn ($t) => [
+                    'id' => $t->id,
+                    'name' => $t->name,
+                    'slug' => $t->slug,
+                    'code' => $t->code,
+                    'accent_color' => $t->accent_color,
+                    'logo_url' => $t->logo_url,
+                ])
+                ->values();
+        }
 
         return array_merge(parent::share($request), [
             'tenant' => $tenant ? [

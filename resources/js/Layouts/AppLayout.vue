@@ -29,7 +29,7 @@
             </Link>
 
             <!-- Active Tenant Dropdown Switcher (Desktop) -->
-            <div v-if="availableTenants.length > 0" class="hidden lg:flex items-center gap-2">
+            <div v-if="availableTenants.length > 1" class="hidden lg:flex items-center gap-2">
               <div class="relative">
                 <select
                   :value="activeTenant?.id"
@@ -234,7 +234,7 @@
       <!-- Mobile Navigation Drawer (Small Screen Menu) -->
       <div v-if="mobileMenuOpen" class="md:hidden border-b p-4 space-y-4 transition-all bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800">
         <!-- Tenant Switcher on Mobile -->
-        <div v-if="availableTenants.length > 0" class="space-y-1">
+        <div v-if="availableTenants.length > 1" class="space-y-1">
           <label class="block text-[10px] font-bold uppercase tracking-wider text-slate-400">Campus Organization Context</label>
           <select
             :value="activeTenant?.id"

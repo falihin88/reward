@@ -201,6 +201,16 @@
             </select>
           </div>
 
+          <div v-if="form.role === 'teacher'">
+            <label class="block font-semibold text-slate-700 dark:text-slate-300 mb-1">Manage Additional Campuses (multi-tenant)</label>
+            <div class="space-y-1 max-h-40 overflow-y-auto bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl p-2">
+              <label v-for="t in tenants" :key="t.id" class="flex items-center gap-2 py-1 px-1 rounded-lg cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300">
+                <input type="checkbox" :value="t.id" v-model="form.tenant_ids" class="rounded border-slate-300 dark:border-slate-700" />
+                {{ t.name }} ({{ t.code }})
+              </label>
+            </div>
+          </div>
+
           <div class="flex justify-end gap-3 pt-4 border-t border-slate-200 dark:border-slate-800">
             <button type="button" @click="showModal = false" class="px-4 py-2 text-xs font-semibold text-slate-500 dark:text-slate-400 cursor-pointer">Cancel</button>
             <button type="submit" class="px-4 py-2 bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold text-xs rounded-xl shadow-lg cursor-pointer">
@@ -222,6 +232,7 @@ import { Users, UserPlus, Edit3, Trash2, X, Search } from 'lucide-vue-next';
 const props = defineProps({
   users: Object,
   teachers: Array,
+  tenants: Array,
 });
 
 const selectedRole = ref('all');
@@ -243,6 +254,7 @@ const form = useForm({
   password: '',
   role: 'student',
   teacher_id: null,
+  tenant_ids: [],
 });
 
 const filteredUsers = computed(() => {
@@ -272,6 +284,7 @@ const openEditModal = (user) => {
   form.password = '';
   form.role = user.role;
   form.teacher_id = user.teacher_id;
+  form.tenant_ids = user.managed_tenant_ids || [];
   showModal.value = true;
 };
 
