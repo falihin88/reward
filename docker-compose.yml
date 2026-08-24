@@ -1,48 +1,60 @@
+# AMYN Madrasah — Laravel application (single service)
+#
+# The database is a SEPARATE standalone MariaDB instance in Coolify, not
+# bundled here. Configure the DB_* variables in Coolify's Environment
+# Variables (or a .env file) — the entrypoint refuses to start without them.
+#
+# Coolify notes:
+#   - The `app` service "Domains" field must include the container port,
+#     e.g. https://madrasah.yourdomain.com:8000  (Coolify does not read
+#     `expose:`/`ports:` to determine the proxy backend port).
+#   - To reach a standalone Coolify MariaDB instance, both this app and the
+#     database must share a Docker network. Standalone Coolify databases
+#     default to the `coolify` network, attached below.
+#   - Set DB_HOST to the MariaDB resource's internal host (its UUID, shown in
+#     the "Internal connection string"), NOT `mariadb` or `localhost`.
+
 services:
-  # AMYN Madrasah Web Application (connects to a standalone Coolify MariaDB instance)
   app:
     build:
       context: .
       dockerfile: Dockerfile
-      args:
-        APP_ENV: development
-        NODE_ENV: development
     restart: unless-stopped
-    extra_hosts:
-      - "host.docker.internal:host-gateway"
+
     expose:
       - "8000"
-    labels:
-      - "coolify.managed=true"
-      - "traefik.enable=true"
-      - "traefik.http.services.app.loadbalancer.server.port=8000"
+
     healthcheck:
       test: ["CMD-SHELL", "curl -fsS http://localhost:8000/up || exit 1"]
       interval: 15s
       timeout: 10s
       retries: 10
       start_period: 60s
+
     environment:
       APP_NAME: "${APP_NAME:-AMYN Madrasah}"
       APP_ENV: ${APP_ENV:-production}
       APP_KEY: ${APP_KEY:-}
-      APP_DEBUG: ${APP_DEBUG:-"false"}
-      APP_URL: ${APP_URL:-"http://localhost:8000"}
+      APP_DEBUG: ${APP_DEBUG:-false}
+      APP_URL: ${APP_URL:-http://localhost:8000}
+
       DB_CONNECTION: ${DB_CONNECTION:-mysql}
-      DB_HOST: ${DB_HOST:-}
+      DB_HOST: ${DB_HOST}
       DB_PORT: ${DB_PORT:-3306}
-      DB_DATABASE: ${DB_DATABASE:-amyn_madrasah}
-      DB_USERNAME: ${DB_USERNAME:-}
-      DB_PASSWORD: ${DB_PASSWORD:-}
-      PHP_CLI_SERVER_WORKERS: ${PHP_CLI_SERVER_WORKERS:-4}
+      DB_DATABASE: ${DB_DATABASE}
+      DB_USERNAME: ${DB_USERNAME}
+      DB_PASSWORD: ${DB_PASSWORD}
+
       SESSION_DRIVER: ${SESSION_DRIVER:-database}
       CACHE_STORE: ${CACHE_STORE:-database}
       QUEUE_CONNECTION: ${QUEUE_CONNECTION:-database}
       FILESYSTEM_DISK: ${FILESYSTEM_DISK:-public}
       SEED_ON_DEPLOY: ${SEED_ON_DEPLOY:-false}
+
     volumes:
       - storage_data:/var/www/html/storage
       - uploads_data:/var/www/html/public/uploads
+
     networks:
       - coolify
 
