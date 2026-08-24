@@ -236,8 +236,8 @@
 </template>
 
 <script setup>
-import { ref, reactive, watch, onMounted } from 'vue';
-import { router, useForm } from '@inertiajs/vue3';
+import { ref, reactive, watch } from 'vue';
+import { router, useForm, Link } from '@inertiajs/vue3';
 import AppLayout from '@/Layouts/AppLayout.vue';
 import {
   CalendarCheck,
@@ -248,6 +248,7 @@ import {
   AlertCircle,
   Coins,
   Send,
+  Users,
 } from 'lucide-vue-next';
 
 const props = defineProps({
@@ -271,9 +272,9 @@ const initializeRecords = () => {
   });
 };
 
-onMounted(() => {
-  initializeRecords();
-});
+// Populate synchronously during setup so the template's v-model bindings
+// (e.g. recordsMap[student.id].notes) exist on the very first render.
+initializeRecords();
 
 watch([() => props.attendances, () => props.students], () => {
   initializeRecords();
