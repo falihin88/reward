@@ -18,7 +18,7 @@ class ApiAuthController extends Controller
             'password' => ['required', 'string'],
         ]);
 
-        $user = User::where('email', $request->email)->first();
+        $user = User::withoutGlobalScopes()->where('email', $request->email)->first();
 
         if (!$user || !Hash::check($request->password, $user->password)) {
             return response()->json([
@@ -36,10 +36,18 @@ class ApiAuthController extends Controller
 
         Auth::login($user);
 
-        // Generate token or session identifier
-        $token = method_exists($user, 'createToken') 
-            ? $user->createToken('teacher-mobile-app')->plainTextToken 
-            : bin2hex(random_bytes(32));
+        if ($user->tenant_id) {
+            if ($request->hasSession()) {
+                session(['active_tenant_id' => $user->tenant_id]);
+            }
+            $tenantObj = \App\Models\Tenant::find($user->tenant_id);
+            if ($tenantObj) {
+                app()->instance('tenant', $tenantObj);
+            }
+        }
+
+        // Generate Sanctum token
+        $token = $user->createToken('teacher-mobile-app')->plainTextToken;
 
         return response()->json([
             'success' => true,

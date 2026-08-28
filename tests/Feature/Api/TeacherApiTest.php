@@ -63,6 +63,52 @@ class TeacherApiTest extends TestCase
                     'role' => 'teacher',
                 ],
             ]);
+        $this->assertNotEmpty($response->json('token'));
+    }
+
+    public function test_teacher_can_login_via_v1_api(): void
+    {
+        $response = $this->postJson('/api/v1/login', [
+            'email' => 'teacher@hikmah.edu',
+            'password' => 'password123',
+        ]);
+
+        $response->assertStatus(200)
+            ->assertJson([
+                'success' => true,
+            ]);
+        $this->assertNotEmpty($response->json('token'));
+    }
+
+    public function test_teacher_in_different_tenant_can_login(): void
+    {
+        $tenant2 = Tenant::create([
+            'name' => 'Second Campus',
+            'slug' => 'second-campus',
+            'code' => 'CAMPUS-02',
+            'is_active' => true,
+        ]);
+
+        $teacher2 = User::create([
+            'tenant_id' => $tenant2->id,
+            'name' => 'Campus Two Teacher',
+            'email' => 'teacher2@hikmah.edu',
+            'password' => bcrypt('password123'),
+            'role' => 'teacher',
+        ]);
+
+        $response = $this->postJson('/api/v1/login', [
+            'email' => 'teacher2@hikmah.edu',
+            'password' => 'password123',
+        ]);
+
+        $response->assertStatus(200)
+            ->assertJson([
+                'success' => true,
+                'user' => [
+                    'email' => 'teacher2@hikmah.edu',
+                ],
+            ]);
     }
 
     public function test_can_fetch_tenants_list(): void

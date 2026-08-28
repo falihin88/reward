@@ -14,11 +14,13 @@ class IdentifyTenant
         $tenant = null;
 
         try {
+            $sessionTenantId = $request->hasSession() ? session('active_tenant_id') : null;
+
             // 1. Check if user is authenticated
             if (auth()->check()) {
                 $user = auth()->user();
 
-                $requestedTenantId = session('active_tenant_id')
+                $requestedTenantId = $sessionTenantId
                     ?? $request->header('X-Tenant-ID')
                     ?? $request->query('tenant_id')
                     ?? $request->input('tenant_id');
@@ -37,7 +39,7 @@ class IdentifyTenant
 
             // 2. Fallback resolution for unauthenticated API requests or default tenant
             if (!$tenant) {
-                $requestedTenantId = session('active_tenant_id')
+                $requestedTenantId = $sessionTenantId
                     ?? $request->header('X-Tenant-ID')
                     ?? $request->query('tenant_id')
                     ?? $request->input('tenant_id');
@@ -59,10 +61,12 @@ class IdentifyTenant
 
             if ($tenant) {
                 app()->instance('tenant', $tenant);
-                session(['active_tenant_id' => $tenant->id]);
+                if ($request->hasSession()) {
+                    session(['active_tenant_id' => $tenant->id]);
+                }
             }
         } catch (\Throwable $e) {
-            // Gracefully ignore database exceptions during initial boot/migrations
+            // Gracefully ignore database/session exceptions during initial boot/migrations
         }
 
         return $next($request);
