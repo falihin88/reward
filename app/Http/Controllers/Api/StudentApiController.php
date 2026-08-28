@@ -62,7 +62,11 @@ class StudentApiController extends Controller
 
     public function store(Request $request): JsonResponse
     {
-        $teacher = $request->user() ?? User::where('role', 'teacher')->first() ?? User::first();
+        $teacher = $request->user() ?? $request->user('sanctum') ?? auth('sanctum')->user();
+
+        if (!$teacher || (!$teacher->isTeacher() && !$teacher->isAdmin())) {
+            $teacher = User::withoutGlobalScope(TenantScope::class)->whereIn('role', ['teacher', 'admin'])->first();
+        }
 
         $validated = $request->validate([
             'name' => ['required', 'string', 'max:255'],

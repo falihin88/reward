@@ -67,7 +67,7 @@ class TeacherApiTest extends TestCase
 
     public function test_can_fetch_tenants_list(): void
     {
-        $response = $this->getJson('/api/v1/tenants');
+        $response = $this->actingAs($this->teacher, 'sanctum')->getJson('/api/v1/tenants');
 
         $response->assertStatus(200)
             ->assertJson([
@@ -80,7 +80,7 @@ class TeacherApiTest extends TestCase
 
     public function test_can_fetch_students_list(): void
     {
-        $response = $this->getJson('/api/v1/students?tenant_id=' . $this->tenant->id);
+        $response = $this->actingAs($this->teacher, 'sanctum')->getJson('/api/v1/students?tenant_id=' . $this->tenant->id);
 
         $response->assertStatus(200)
             ->assertJson([
@@ -93,7 +93,7 @@ class TeacherApiTest extends TestCase
 
     public function test_can_record_attendance_and_award_points(): void
     {
-        $response = $this->postJson('/api/v1/attendance', [
+        $response = $this->actingAs($this->teacher, 'sanctum')->postJson('/api/v1/attendance', [
             'date' => now()->toDateString(),
             'records' => [
                 [
@@ -116,7 +116,7 @@ class TeacherApiTest extends TestCase
 
     public function test_can_award_points_to_student(): void
     {
-        $response = $this->postJson('/api/v1/points/award', [
+        $response = $this->actingAs($this->teacher, 'sanctum')->postJson('/api/v1/points/award', [
             'student_id' => $this->student->id,
             'points' => 50,
             'reason' => 'teacher_award',
@@ -134,7 +134,7 @@ class TeacherApiTest extends TestCase
 
     public function test_can_create_new_student_account(): void
     {
-        $response = $this->postJson('/api/v1/students', [
+        $response = $this->actingAs($this->teacher, 'sanctum')->postJson('/api/v1/students', [
             'name' => 'New Learner',
             'email' => 'newlearner@hikmah.edu',
             'password' => 'secret123',
@@ -155,5 +155,15 @@ class TeacherApiTest extends TestCase
             'email' => 'newlearner@hikmah.edu',
             'role' => 'student',
         ]);
+    }
+
+    public function test_unauthenticated_requests_are_rejected(): void
+    {
+        $response = $this->postJson('/api/v1/points/award', [
+            'student_id' => $this->student->id,
+            'points' => 50,
+        ]);
+
+        $response->assertStatus(401);
     }
 }

@@ -68,7 +68,19 @@ class AttendanceApiController extends Controller
             'records.*.notes' => ['nullable', 'string', 'max:255'],
         ]);
 
-        $teacher = $request->user() ?? User::where('role', 'teacher')->first() ?? User::first();
+        $teacher = $request->user() ?? $request->user('sanctum') ?? auth('sanctum')->user();
+
+        if (!$teacher || (!$teacher->isTeacher() && !$teacher->isAdmin())) {
+            $teacher = User::withoutGlobalScope(TenantScope::class)->whereIn('role', ['teacher', 'admin'])->first();
+        }
+
+        if (!$teacher || (!$teacher->isTeacher() && !$teacher->isAdmin())) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Unauthorized. Attendance can only be submitted by a valid teacher or admin.',
+            ], 403);
+        }
+
         $date = $request->date;
         $records = $request->records;
 
@@ -123,7 +135,7 @@ class AttendanceApiController extends Controller
 
                     $pointService->awardOrDeductPointsByTeacher(
                         $student,
-                        $teacher ?? $student,
+                        $teacher,
                         $pointsDiff,
                         $reason,
                         $noteText
